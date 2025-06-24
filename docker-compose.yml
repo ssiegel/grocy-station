@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: © 2025 Stefan Siegel <ssiegel@sdas.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+services:
+  grocy-station:
+    build: .
+    ports:
+      - 8080:3000
+    environment:
+      - ORIGIN=http://localhost:8080
+      - PUBLIC_BROKER_URL=ws://localhost:8082
+      - PUBLIC_TOPIC=hid2mqtt
+      - GROCY_BASE_URL=http://grocy/api
+      - GROCY_API_KEY=dummy
+
+  grocy:
+    image: lscr.io/linuxserver/grocy:4.5.0
+    entrypoint: /bin/sh -c "sed -i -re s/production/demo/ /app/www/config-dist.php && exec /init"
+    ports:
+      - 8081:80
+
+  mosquitto:
+    image: eclipse-mosquitto
+    entrypoint: /bin/sh -c "printf 'persistence false\nlistener 1883\nprotocol mqtt\nlistener 8082\nprotocol websockets\nallow_anonymous true\n' > /mosquitto/config/mosquitto.conf && exec /docker-entrypoint.sh /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+    ports:
+      - 1883:1883
+      - 8082:8082

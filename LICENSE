@@ -1,0 +1,7 @@
+# License Overview
+
+This repository follows the [REUSE specification](https://reuse.software/).
+Each source file declares its licensing via SPDX headers, and these headers are
+the authoritative source of license information.
+
+Full license texts can be found in the `LICENSES/` directory.

@@ -1,0 +1,102 @@
+/*
+ * SPDX-FileCopyrightText: © 2024 [these people](https://github.com/sveltejs/cli/graphs/contributors)
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/* Write your global styles here, in PostCSS syntax */
+
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@source inline('border-solid border-dotted border-none');
+@source inline('bg-{btn,input}-bg-default hover:bg-{btn,input}-bg-hover focus:bg-{btn,input}-bg-focus active:bg-{btn,input}-bg-active text-{btn,input}-fg');
+
+@theme {
+  --color-primary-50:  #FFF5F2;
+  --color-primary-100: #FFF1EE;
+  --color-primary-200: #FFE4DE;
+  --color-primary-300: #FFD5CC;
+  --color-primary-400: #FFBCAD;
+  --color-primary-500: #FE795D;
+  --color-primary-600: #EF562F;
+  --color-primary-700: #EB4F27;
+  --color-primary-800: #CC4522;
+  --color-primary-900: #A5371B;
+
+  --font-sans: "Tanohe Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --color-charcoal-830: hsla(230, 7%, 17%, 1.00);
+  --color-charcoal-300: hsla(230, 7%, 70%, 1.00);
+  --color-charcoal-250-70: hsla(230, 7%, 75%, 0.70);
+  --color-charcoal-250-25: hsla(230, 7%, 75%, 0.25);
+  --color-charcoal-250-20: hsla(230, 7%, 75%, 0.20);
+  --color-charcoal-250-15: hsla(230, 7%, 75%, 0.15);
+  --color-charcoal-250-10: hsla(230, 7%, 75%, 0.10);
+  --color-charcoal-250: hsla(230, 7%, 75%, 1.00);
+  --color-charcoal-200: hsla(230, 7%, 80%, 1.00);
+  --color-charcoal-150: hsla(230, 7%, 85%, 1.00);
+  --color-charcoal-1000-20: hsla(230, 7%, 0%, 0.20);
+
+  --color-base: var(--color-charcoal-830);
+  --color-darken: var(--color-charcoal-1000-20);
+  --color-primary-dark: var(--color-charcoal-300);
+  --color-primary-default: var(--color-charcoal-250);
+  --color-primary-light: var(--color-charcoal-200);
+  --color-primary-lighter: var(--color-charcoal-150);
+  --color-shade-low: var(--color-charcoal-250-10);
+  --color-shade-default: var(--color-charcoal-250-15);
+  --color-shade-high: var(--color-charcoal-250-20);
+  --color-shade-higher: var(--color-charcoal-250-25);
+  --color-shade-highest: var(--color-charcoal-250-70);
+  --color-text: var(--color-charcoal-830);
+
+  --color-base-bg: var(--color-base);
+  --color-base-shadow: var(--color-darken);
+
+  --color-btn-bg-active: var(--color-primary-lighter);
+  --color-btn-bg-default: var(--color-primary-dark);
+  --color-btn-bg-focus: var(--color-primary-light);
+  --color-btn-bg-hover: var(--color-primary-default);
+  --color-btn-fg: var(--color-text);
+
+  --color-container-bg-active: var(--color-shade-higher);
+  --color-container-bg-default: var(--color-shade-low);
+  --color-container-bg-focus: var(--color-shade-high);
+  --color-container-bg-hover: var(--color-shade-default);
+  --color-container-fg: var(--color-primary-default);
+
+  --color-input-bg-active: var(--color-shade-higher);
+  --color-input-bg-default: var(--color-shade-low);
+  --color-input-bg-focus: var(--color-shade-high);
+  --color-input-bg-hover: var(--color-shade-default);
+  --color-input-fg: var(--color-primary-default);
+
+  --color-monitor-bg: var(--color-darken);
+  --color-monitor-fg: var(--color-shade-highest);
+
+  --color-groove-fg: var(--color-shade-low);
+  --color-label-fg: var(--color-shade-highest);
+}
+
+@layer base {
+  .dummy {
+    /* make font-magician happy */
+    font-family: "Tanohe Sans";
+  }
+
+  html {
+    @apply font-sans;
+    @apply bg-base-bg;
+  }
+
+  .prose,
+  .prose-sm,
+  .prose-lg,
+  .prose-xl,
+  .prose-2xl {
+    line-height: 1.4;
+  }
+}
