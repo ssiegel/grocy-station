@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { pressaction } from '$lib/pressaction.svelte';
-    import { setupMqtt, disconnectMqtt } from '$lib/mqtt';
+    import { setupMqtt, disconnectMqtt } from '$lib/page/mqtt';
     import { screenOn } from '$lib/screen'
     import { formatDate, formatUnit } from '$lib/page/format'
     import { GrocyObjectCache, grocyData, consumeValid, progress, reAllot, AbortTimeoutController, grocy, fetchStock, error, standbyMessage, inputUnitsize, inputQuantity, consumeAmount, formatNumber, stockEntryPressed, fetchDbChanged, lastchanged, showError} from '$lib/page/page.svelte';
