@@ -1,7 +1,8 @@
 import { env } from '$env/dynamic/public';
 import { parseBarcode } from '$lib/barcode';
 import { screenOn } from '$lib/screen';
-import { showGrocyProduct, showError } from '$lib/page/page.svelte'
+import { showGrocyProduct } from '$lib/page/grocy.svelte';
+import { showError } from '$lib/page/error.svelte'
 
 import mqtt from 'mqtt';
 
@@ -9,18 +10,18 @@ let mqttclient: mqtt.MqttClient;
 
 export function setupMqtt() {
     if (env.PUBLIC_BROKER_URL === undefined || env.PUBLIC_TOPIC === undefined) {
-            showError(`MQTT not configured`);
-            return;
-        }
+        showError(`MQTT not configured`);
+        return Error();
+    }
 
     mqttclient = mqtt.connect(env.PUBLIC_BROKER_URL);
 
     mqttclient.on('connect', () => {
         if (env.PUBLIC_TOPIC !== undefined)
-        mqttclient.subscribe(env.PUBLIC_TOPIC, (err) => {
-            if (err)
-                showError(`Subscription error: ${err}`);
-        });
+            mqttclient.subscribe(env.PUBLIC_TOPIC, (err) => {
+                if (err)
+                    showError(`Subscription error: ${err}`);
+            });
     });
 
     mqttclient.on('message', async (topic: string, payload: Buffer) => {
@@ -53,7 +54,7 @@ export function setupMqtt() {
 
 export function disconnectMqtt() {
     if (mqttclient && mqttclient.connected) {
-            mqttclient.end();
-            showError('Disconnected from MQTT broker');
-        }
+        mqttclient.end();
+        showError('Disconnected from MQTT broker');
+    }
 }
