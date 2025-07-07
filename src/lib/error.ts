@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: © 2025 Stefan Siegel <ssiegel@sdas.net>
+// SPDX-FileCopyrightText: © 2025 Tiago Sanona <tsanona@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { pageState } from "$lib/state.svelte";
 
 export function showError(message?: string, timeout?: number) {

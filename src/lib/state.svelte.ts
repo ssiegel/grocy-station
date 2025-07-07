@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: © 2025 Stefan Siegel <ssiegel@sdas.net>
+// SPDX-FileCopyrightText: © 2025 Tiago Sanona <tsanona@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { GrocyData } from "$lib/grocy"
 
 export let lastchanged = { timestamp: undefined as string | undefined, interval: undefined as ReturnType<typeof setInterval> | undefined };
