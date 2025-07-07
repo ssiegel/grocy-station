@@ -1,8 +1,8 @@
 import { env } from '$env/dynamic/public';
 import { parseBarcode } from '$lib/barcode';
 import { screenOn } from '$lib/screen';
-import { showGrocyProduct } from '$lib/page/grocy.svelte';
-import { showError } from '$lib/page/error.svelte'
+import { showGrocyProduct } from '$lib/grocy';
+import { showError } from '$lib/error'
 
 import mqtt from 'mqtt';
 

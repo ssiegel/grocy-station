@@ -1,8 +1,8 @@
 <script lang="ts">
     import { pressaction } from "$lib/pressaction.svelte";
     import { formatNumber, formatDate } from "$lib/format";
-    import { GrocyObjectCache } from "$lib/page/grocy.svelte";
-    import type { GrocyData, GrocyStockEntry } from "$lib/page/grocy.svelte";
+    import { GrocyObjectCache } from "$lib/grocy";
+    import type { GrocyData, GrocyStockEntry } from "$lib/grocy";
 
     let { product }: { product: GrocyData } = $props();
 
@@ -18,7 +18,8 @@
             )}
             {#if product.product_details.stock_amount_opened}({formatNumber(
                     product.product_details.stock_amount_opened,
-                )} opened){/if}
+                )} opened)
+            {/if}
         {:else if product.stock?.length}
             Stock
         {:else}
@@ -44,12 +45,14 @@
                     style="grid-area: {i * 2 + 2} / 1"
                     class="pl-2 justify-self-end whitespace-nowrap"
                 >
-                    {#if entry.open === 1}<svg
+                    {#if entry.open === 1}
+                        <svg
                             inline-src="open"
                             class="inline pb-1"
                             height="1em"
                             fill="currentColor"
-                        />{/if}
+                        />
+                    {/if}
                     {formatNumber(entry.amount)}
                 </div>
                 <div style="grid-area: {i * 2 + 2} / 2">

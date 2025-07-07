@@ -6,16 +6,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { onMount, onDestroy, untrack } from "svelte";
     import { setupMqtt, disconnectMqtt } from "$lib/mqtt";
     import { screenOn } from "$lib/screen";
-    import { error, showError } from "$lib/page/error.svelte";
-    import { progress, standbyMessage } from "$lib/page/page.svelte";
+    import { showError } from "$lib/error";
     import {
-        grocyData,
         GrocyObjectCache,
-        getConsumeAmount,
-        lastchanged,
         fetchDbChanged,
         reAllot,
-    } from "$lib/page/grocy.svelte";
+    } from "$lib/grocy";
+    import { pageState, lastchanged } from "$lib/state.svelte";
     import ProductStock from "$lib/components/ProductStock.svelte";
 
     const GROCY_POLL_INTERVAL_MS = 15_000;
@@ -25,7 +22,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     };
 
     $effect(() => {
-        getConsumeAmount();
+        void pageState.conumeAmount;
         untrack(() => reAllot(false));
     });
 
@@ -51,28 +48,28 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 <div class="text-2xl flex flex-col gap-2 items-stretch min-h-screen">
-    {#if progress.current}
+    {#if pageState.progress}
         <div class="fixed top-0 left-0 w-full h-[2px] z-50 pointer-events-none">
             <div
                 class="bg-yellow-500 h-full transition-all duration-300"
-                style="width: {progress.current}%"
+                style="width: {pageState.progress}%"
             ></div>
         </div>
     {/if}
     <div class="bg-container-bg-default text-container-fg px-2 py-1">Grocy Station</div>
 
-    {#if error.message}
+    {#if pageState.error.message}
         <div
             class="text-label-fg px-2 grow flex items-center justify-center text-center text-red-400"
         >
-            {error.message}
+            {pageState.error.message}
         </div>
-    {:else if !grocyData.current || !Object.keys(grocyData.current).length}
+    {:else if !pageState.grocyData || !Object.keys(pageState.grocyData).length}
         <div class="text-label-fg px-2 grow flex items-center justify-center text-center">
-            {standbyMessage.current}
+            {pageState.standbyMessage}
         </div>
     {:else}
-        <ProductStock product={grocyData.current} />
+        <ProductStock product={pageState.grocyData} />
     {/if}
 </div>
 

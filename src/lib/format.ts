@@ -1,4 +1,4 @@
-import { GrocyObjectCache } from "$lib/page/grocy.svelte";
+import { GrocyObjectCache } from "$lib/grocy";
 
 export function formatDate(date?: string): string {
     date ??= 'unknown';

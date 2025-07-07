@@ -1,20 +1,16 @@
 <script lang="ts">
-    import { progress } from "$lib/page/page.svelte";
-    import {
-        inputUnitsize,
-        inputQuantity,
-        getConsumeAmount,
-        consumeValid,
-        doConsume,
-    } from "$lib/page/grocy.svelte";
-    import type { GrocyData } from "$lib/page/grocy.svelte";
+    import { doConsume } from "$lib/grocy";
+    import type { GrocyData } from "$lib/grocy";
     import { formatUnit, formatNumber } from "$lib/format";
-    import Stock from "./Stock.svelte";
+    import { pageState } from "$lib/state.svelte";
+    import Stock from "$lib/components/Stock.svelte";
 
     let { product }: { product: GrocyData } = $props();
 </script>
 
-<div class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between">
+<div
+    class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between"
+>
     <div>{product.product_details?.product.name ?? "\u00a0"}</div>
     {#if product.product_group?.name}
         <div class="text-xl whitespace-nowrap">
@@ -37,13 +33,13 @@
                     <button
                         class="{'bg-@-bg-default hover:bg-@-bg-hover focus:bg-@-bg-focus active:bg-@-bg-active text-@-fg'.replaceAll(
                             '@',
-                            inputUnitsize.current === pu.amount_stock ? 'btn' : 'input',
+                            pageState.unitSize === pu.amount_stock ? 'btn' : 'input',
                         )} border-btn-bg-default hover:border-btn-bg-hover focus:border-btn-bg-focus active:border-btn-bg-active border-2 px-2 py-1 rounded"
-                        onclick={() => (inputUnitsize.current = pu.amount_stock)}
+                        onclick={() => (pageState.unitSize = pu.amount_stock)}
                     >
-                            {pu.name}
-                            <br />
-                            {pu.amount_display}
+                        {pu.name}
+                        <br />
+                        {pu.amount_display}
                     </button>
                 {/each}
             </div>
@@ -54,12 +50,12 @@
                     <span class="text-xl">Unit size</span>
                     <br />
                     <input
-                        bind:value={inputUnitsize.current}
+                        bind:value={pageState.inputUnitsize}
                         type="text"
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            inputUnitsize.current,
+                            pageState.unitSize,
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
@@ -73,12 +69,12 @@
                     <span class="text-xl">Quantity</span>
                     <br />
                     <input
-                        bind:value={inputQuantity.current}
+                        bind:value={pageState.inputQuantity}
                         type="text"
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            inputQuantity.current,
+                            pageState.quantity,
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
@@ -89,24 +85,24 @@
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(inputQuantity.current))
-                            inputQuantity.current = Math.max(0, inputQuantity.current) + 1;
-                    }}
-                >+</button>
+                        if (Number.isFinite(pageState.quantity))
+                            pageState.quantity = Math.max(0, pageState.quantity) + 1;
+                    }}>+</button
+                >
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(inputQuantity.current))
-                            inputQuantity.current = Math.max(0, inputQuantity.current) - 1;
-                    }}
-                >−</button>
+                        if (Number.isFinite(pageState.quantity))
+                            pageState.quantity = Math.max(0, pageState.quantity) - 1;
+                    }}>−</button
+                >
             </div>
-            {#if Number.isFinite(getConsumeAmount())}
+            {#if Number.isFinite(pageState.conumeAmount)}
                 <div><span>=</span></div>
                 <div>
-                    <span class={consumeValid.current ? "" : "text-red-500"}
+                    <span class={pageState.consumeValid ? "" : "text-red-500"}
                         >{formatNumber(
-                            getConsumeAmount(),
+                            pageState.conumeAmount,
                             product.product_details.quantity_unit_stock.id,
                         )}</span
                     >
@@ -114,7 +110,7 @@
             {/if}
             <div class="ml-auto self-stretch">
                 <button
-                    disabled={!consumeValid.current || progress.current != 0}
+                    disabled={!pageState.consumeValid || pageState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Open"
                     onclick={async () => doConsume(true)}
@@ -124,7 +120,7 @@
             </div>
             <div class="self-stretch">
                 <button
-                    disabled={!consumeValid.current || progress.current != 0}
+                    disabled={!pageState.consumeValid || pageState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Consume"
                     onclick={async () => doConsume(false)}
