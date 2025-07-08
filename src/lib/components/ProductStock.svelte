@@ -6,12 +6,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <script lang="ts">
     import { doConsume } from "$lib/grocy";
-    import type { GrocyData } from "$lib/grocy";
     import { formatUnit, formatNumber } from "$lib/format";
-    import { pageState } from "$lib/state.svelte";
     import Stock from "$lib/components/Stock.svelte";
+    import type { ProductState } from "$lib/state.svelte";
 
-    let { product }: { product: GrocyData } = $props();
+    let { state }: { state: ProductState } = $props();
+    let product = state.grocyData;
 </script>
 
 <div
@@ -39,9 +39,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <button
                         class="{'bg-@-bg-default hover:bg-@-bg-hover focus:bg-@-bg-focus active:bg-@-bg-active text-@-fg'.replaceAll(
                             '@',
-                            pageState.unitSize === pu.amount_stock ? 'btn' : 'input',
+                            state.unitSize === pu.amount_stock ? 'btn' : 'input',
                         )} border-btn-bg-default hover:border-btn-bg-hover focus:border-btn-bg-focus active:border-btn-bg-active border-2 px-2 py-1 rounded"
-                        onclick={() => (pageState.unitSize = pu.amount_stock)}
+                        onclick={() => (state.unitSize = pu.amount_stock)}
                     >
                         {pu.name}
                         <br />
@@ -56,12 +56,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <span class="text-xl">Unit size</span>
                     <br />
                     <input
-                        bind:value={pageState.inputUnitsize}
+                        bind:value={state.inputUnitSize}
                         type="text"
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            pageState.unitSize,
+                            state.unitSize,
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
@@ -75,12 +75,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <span class="text-xl">Quantity</span>
                     <br />
                     <input
-                        bind:value={pageState.inputQuantity}
+                        bind:value={state.inputQuantity}
                         type="text"
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            pageState.quantity,
+                            state.quantity,
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
@@ -91,24 +91,24 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(pageState.quantity))
-                            pageState.quantity = Math.max(0, pageState.quantity) + 1;
+                        if (Number.isFinite(state.quantity))
+                            state.increaseQuantity();
                     }}>+</button
                 >
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(pageState.quantity))
-                            pageState.quantity = Math.max(0, pageState.quantity) - 1;
+                        if (Number.isFinite(state.quantity))
+                            state.decreaseQuantity();
                     }}>−</button
                 >
             </div>
-            {#if Number.isFinite(pageState.conumeAmount)}
+            {#if Number.isFinite(state.consumeAmount)}
                 <div><span>=</span></div>
                 <div>
-                    <span class={pageState.consumeValid ? "" : "text-red-500"}
+                    <span class={state.consumeValid ? "" : "text-red-500"}
                         >{formatNumber(
-                            pageState.conumeAmount,
+                            state.consumeAmount,
                             product.product_details.quantity_unit_stock.id,
                         )}</span
                     >
@@ -116,7 +116,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             {/if}
             <div class="ml-auto self-stretch">
                 <button
-                    disabled={!pageState.consumeValid || pageState.progress != 0}
+                    disabled={!state.consumeValid || state.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Open"
                     onclick={async () => doConsume(true)}
@@ -126,7 +126,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             </div>
             <div class="self-stretch">
                 <button
-                    disabled={!pageState.consumeValid || pageState.progress != 0}
+                    disabled={!state.consumeValid || state.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Consume"
                     onclick={async () => doConsume(false)}

@@ -3,29 +3,154 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { GrocyData } from "$lib/grocy"
+import { fetchDbChanged, fetchProductStateInfo } from "$lib/grocy";
+import type { GrocyData } from "$lib/grocy";
 
-export let lastchanged = { timestamp: undefined as string | undefined, interval: undefined as ReturnType<typeof setInterval> | undefined };
-
-type error = {
-    message: string,
-    timeout?: ReturnType<typeof setTimeout>
+abstract class State {
+  public progress = $state(0);
 }
 
-class PageState {
-    progress = $state(0);
-    grocyData?: GrocyData = $state(undefined);
-    inputQuantity = $state('0');
-    quantity = $derived(Number(this.inputQuantity));
-    inputUnitsize = $state('0');
-    unitSize = $derived(Number(this.inputUnitsize));
-    conumeAmount = $derived(this.unitSize * this.quantity);
-    consumeValid = $state(false);
-    error: error = $state({
-        message: '',
-        timeout: undefined
-    });
-    standbyMessage = $state('Initializing…');
+export class InitState extends State {
+  public readonly message = "Initializing…";
+
+  constructor() {
+    super();
+  }
 }
 
-export const pageState = new PageState()
+export class ErrorState implements State {
+  public progress: number;
+  public readonly message: string;
+  //private timeout?: ReturnType<typeof setTimeout>
+
+  constructor(message: string) {
+    pageInfo.state.progress = 0;
+    this.progress = pageInfo.state.progress;
+    this.message = message;
+    setPageState(this);
+  }
+}
+
+export class WaitingState implements State {
+  public progress: number;
+  public readonly message = "Please scan a barcode.";
+
+  constructor() {
+    pageInfo.state.progress = 0;
+    this.progress = pageInfo.state.progress;
+    setPageState(this);
+  }
+
+  product(barcode: string) {
+  }
+}
+
+export class ProductState implements State {
+  public progress: number;
+  public grocyData: GrocyData;
+  public inputQuantity?: string;
+  public quantity: number;
+  public inputUnitSize?: string;
+  public unitSize: number;
+  public readonly consumeAmount: number;
+  public consumeValid = $state(false);
+  public lastchanged = {
+    timestamp: undefined as string | undefined,
+    interval: undefined as ReturnType<typeof setInterval> | undefined,
+  };
+
+  constructor(grocyData: GrocyData, quantity: number, unitSize: number) {
+    pageInfo.state.progress = 0;
+    this.progress = pageInfo.state.progress;
+
+    this.grocyData = $state(grocyData);
+
+    this.inputQuantity = $state(undefined);
+    this.quantity = $derived(Number(this.inputQuantity));
+    this.quantity = quantity;
+
+    this.inputUnitSize = $state(undefined);
+    this.unitSize = $derived(Number(this.inputUnitSize));
+    this.unitSize = unitSize;
+
+    this.consumeAmount = $derived(this.unitSize * this.quantity);
+
+    setPageState(this);
+  }
+
+  public static async build(barcode: string) {
+    if (
+      pageInfo.state instanceof ProductState &&
+      pageInfo.state.grocyData.barcode?.barcode === barcode &&
+      Number.isFinite(pageInfo.state.quantity)
+    ) {
+      pageInfo.state.increaseQuantity();
+    }
+
+    let productStateInfo = await fetchProductStateInfo(barcode);
+    let state = new ProductState(
+      productStateInfo.grocyData,
+      1,
+      productStateInfo.unitSize,
+    );
+
+    state.setDbChangeInterval();
+  }
+
+  setDbChangeInterval() {
+    const GROCY_POLL_INTERVAL_MS = 15_000;
+    this.lastchanged.interval = setInterval(
+      fetchDbChanged,
+      GROCY_POLL_INTERVAL_MS,
+    );
+  }
+
+  reAllot(skipOpen: boolean) {
+    if (
+      !Number.isFinite(this.consumeAmount) || this.consumeAmount <= 0 ||
+      this.grocyData?.stock === undefined
+    ) {
+      this.consumeValid = false;
+      return;
+    }
+
+    let remaining = this.consumeAmount;
+    for (const entry of this.grocyData.stock) {
+      if (skipOpen && entry.open === 1) {
+        entry.amount_allotted = 0;
+      } else {
+        entry.amount_allotted = Math.min(entry.amount, remaining);
+        remaining -= entry.amount_allotted;
+      }
+    }
+
+    this.consumeValid = remaining === 0;
+  }
+
+  increaseQuantity() {
+    if (Number.isFinite(this.quantity)) {
+      Math.max(0, this.quantity) + 1;
+    }
+  }
+
+  decreaseQuantity() {
+    if (Number.isFinite(this.quantity)) {
+      Math.max(0, this.quantity) - 1;
+    }
+  }
+}
+
+export let pageInfo: {
+  state: State;
+  stateTimeout: ReturnType<typeof setTimeout> | undefined;
+} = $state({ state: new InitState(), stateTimeout: undefined });
+const setPageState = (state: State) => {
+  clearTimeout(pageInfo.stateTimeout);
+  pageInfo.state = state;
+};
+
+export let setWaitingStateOnTimeout = (ms: number) => {
+  pageInfo.stateTimeout = setTimeout(() => {
+    new WaitingState();
+  }, ms);
+};

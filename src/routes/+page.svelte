@@ -7,24 +7,21 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { onMount, onDestroy, untrack } from "svelte";
     import { setupMqtt, disconnectMqtt } from "$lib/mqtt";
     import { screenOn } from "$lib/screen";
-    import { showError } from "$lib/error";
     import {
         GrocyObjectCache,
-        fetchDbChanged,
-        reAllot,
     } from "$lib/grocy";
-    import { pageState, lastchanged } from "$lib/state.svelte";
+    import { pageInfo, ErrorState, WaitingState, ProductState } from "$lib/state.svelte";
     import ProductStock from "$lib/components/ProductStock.svelte";
-
-    const GROCY_POLL_INTERVAL_MS = 15_000;
 
     (globalThis as any).reEnableScreen = () => {
         screenOn(3000);
     };
 
     $effect(() => {
-        void pageState.conumeAmount;
-        untrack(() => reAllot(false));
+        if (pageInfo.state instanceof ProductState) {
+            void pageInfo.state.consumeAmount;
+            untrack(() => (pageInfo.state as ProductState).reAllot(false)); // TODO: why need cast?
+        }
     });
 
     onMount(() => {
@@ -35,12 +32,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         GrocyObjectCache.getObject("quantity_units");
         GrocyObjectCache.getObject("product_groups");
 
-        setTimeout(fetchDbChanged);
-        lastchanged.interval = setInterval(fetchDbChanged, GROCY_POLL_INTERVAL_MS);
-
         setupMqtt();
 
-        showError();
+        new WaitingState()
     });
 
     onDestroy(() => {
@@ -49,28 +43,28 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 <div class="text-2xl flex flex-col gap-2 items-stretch min-h-screen">
-    {#if pageState.progress}
+    {#if pageInfo.state.progress}
         <div class="fixed top-0 left-0 w-full h-[2px] z-50 pointer-events-none">
             <div
                 class="bg-yellow-500 h-full transition-all duration-300"
-                style="width: {pageState.progress}%"
+                style="width: {pageInfo.state.progress}%"
             ></div>
         </div>
     {/if}
     <div class="bg-container-bg-default text-container-fg px-2 py-1">Grocy Station</div>
 
-    {#if pageState.error.message}
+    {#if pageInfo.state instanceof ErrorState}
         <div
             class="text-label-fg px-2 grow flex items-center justify-center text-center text-red-400"
         >
-            {pageState.error.message}
+            {pageInfo.state.message}
         </div>
-    {:else if !pageState.grocyData || !Object.keys(pageState.grocyData).length}
+    {:else if pageInfo.state instanceof WaitingState} <!-- !pageState.grocyData || !Object.keys(pageState.grocyData).length} -->
         <div class="text-label-fg px-2 grow flex items-center justify-center text-center">
-            {pageState.standbyMessage}
+            {pageInfo.state.message}
         </div>
-    {:else}
-        <ProductStock product={pageState.grocyData} />
+    {:else if pageInfo.state instanceof ProductState}
+        <ProductStock state={pageInfo.state} />
     {/if}
 </div>
 
