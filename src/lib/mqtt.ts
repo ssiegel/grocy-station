@@ -44,7 +44,6 @@ export function setupMqtt() {
       return;
     }
 
-    new WaitingState();
     screenOn(600_000);
 
     try {

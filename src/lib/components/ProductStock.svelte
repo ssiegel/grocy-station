@@ -39,9 +39,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <button
                         class="{'bg-@-bg-default hover:bg-@-bg-hover focus:bg-@-bg-focus active:bg-@-bg-active text-@-fg'.replaceAll(
                             '@',
-                            state.unitSize === pu.amount_stock ? 'btn' : 'input',
+                            state.unitSize() === pu.amount_stock ? 'btn' : 'input',
                         )} border-btn-bg-default hover:border-btn-bg-hover focus:border-btn-bg-focus active:border-btn-bg-active border-2 px-2 py-1 rounded"
-                        onclick={() => (state.unitSize = pu.amount_stock)}
+                        onclick={() => (state.inputUnitSize = String(pu.amount_stock))}
                     >
                         {pu.name}
                         <br />
@@ -61,7 +61,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            state.unitSize,
+                            state.unitSize(),
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
@@ -80,7 +80,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            state.quantity,
+                            state.quantity(),
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
@@ -91,14 +91,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(state.quantity))
+                        if (Number.isFinite(state.quantity()))
                             state.increaseQuantity();
                     }}>+</button
                 >
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(state.quantity))
+                        if (Number.isFinite(state.quantity()))
                             state.decreaseQuantity();
                     }}>−</button
                 >

@@ -309,9 +309,10 @@ async function fetchStock(product: GrocyData, signal: AbortSignal) {
 
   // Force trigger recalculation of allotted amounts via $effect
   if (pageInfo.state instanceof ProductState) {
-    pageInfo.state.quantity = 0;
+    let currentInputQuantity = pageInfo.state.inputQuantity;
+    pageInfo.state.inputQuantity = String(pageInfo.state.quantity() + 1); // When set to zero, consume and open butens get disabled
     await Promise.resolve();
-    pageInfo.state.quantity = 1;
+    pageInfo.state.inputQuantity = currentInputQuantity;
   }
 }
 

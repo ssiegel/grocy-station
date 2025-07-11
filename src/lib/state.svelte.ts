@@ -48,10 +48,8 @@ export class WaitingState implements State {
 export class ProductState implements State {
   public progress: number;
   public grocyData: GrocyData;
-  public inputQuantity?: string;
-  public quantity: number;
-  public inputUnitSize?: string;
-  public unitSize: number;
+  public inputQuantity: string;
+  public inputUnitSize: string;
   public readonly consumeAmount: number;
   public consumeValid = $state(false);
   public lastchanged = {
@@ -59,39 +57,41 @@ export class ProductState implements State {
     interval: undefined as ReturnType<typeof setInterval> | undefined,
   };
 
-  constructor(grocyData: GrocyData, quantity: number, unitSize: number) {
+  constructor(grocyData: GrocyData, inputUnitSize: string) {
     pageInfo.state.progress = 0;
     this.progress = pageInfo.state.progress;
 
     this.grocyData = $state(grocyData);
 
-    this.inputQuantity = $state(undefined);
-    this.quantity = $derived(Number(this.inputQuantity));
-    this.quantity = quantity;
+    this.inputQuantity = $state('1');
+    this.inputUnitSize = $state(inputUnitSize);
 
-    this.inputUnitSize = $state(undefined);
-    this.unitSize = $derived(Number(this.inputUnitSize));
-    this.unitSize = unitSize;
-
-    this.consumeAmount = $derived(this.unitSize * this.quantity);
+    this.consumeAmount = $derived(this.quantity() * this.unitSize());
 
     setPageState(this);
+  }
+
+  public quantity(): number {
+    return Number(this.inputQuantity)
+  }
+
+  public unitSize(): number {
+    return Number(this.inputUnitSize)
   }
 
   public static async build(barcode: string) {
     if (
       pageInfo.state instanceof ProductState &&
-      pageInfo.state.grocyData.barcode?.barcode === barcode &&
-      Number.isFinite(pageInfo.state.quantity)
+      (pageInfo.state.grocyData.barcode?.barcode === barcode) &&
+      Number.isFinite(pageInfo.state.quantity())
     ) {
-      pageInfo.state.increaseQuantity();
+      return pageInfo.state.increaseQuantity();
     }
 
     let productStateInfo = await fetchProductStateInfo(barcode);
     let state = new ProductState(
       productStateInfo.grocyData,
-      1,
-      productStateInfo.unitSize,
+      String(productStateInfo.unitSize),
     );
 
     state.setDbChangeInterval();
@@ -128,14 +128,14 @@ export class ProductState implements State {
   }
 
   increaseQuantity() {
-    if (Number.isFinite(this.quantity)) {
-      Math.max(0, this.quantity) + 1;
+    if (Number.isFinite(this.quantity())) {
+      this.inputQuantity = String(Math.max(0, this.quantity()) + 1);
     }
   }
 
   decreaseQuantity() {
-    if (Number.isFinite(this.quantity)) {
-      Math.max(0, this.quantity) - 1;
+    if (Number.isFinite(this.quantity())) {
+      this.inputQuantity = String(Math.max(0, Number(this.quantity())) - 1);
     }
   }
 }
