@@ -8,11 +8,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { pressaction } from "$lib/pressaction.svelte";
     import { formatNumber, formatDate } from "$lib/format";
     import { GrocyObjectCache } from "$lib/grocy";
-    import type { GrocyData, GrocyStockEntry } from "$lib/grocy";
+    import { ProductState } from "$lib/state.svelte";
 
-    let { product }: { product: GrocyData } = $props();
+    let { state }: { state: ProductState } = $props();
+    let product = state.grocyData;
 
-    function stockEntryPressed(entry: GrocyStockEntry) {}
+    function stockEntryPressed(entry_index: number) {
+        state.selected_stock_entry_index = entry_index;
+        state.reAllot(false);
+    }
 </script>
 
 {#if product.stock !== undefined || product.product_details !== undefined}
@@ -81,15 +85,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 {/if}
                 <div
                     style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 5"
-                    class="hover:bg-shade-default z-10 border-yellow-500 border-l-4 border-{entry.amount_allotted >
-                    0
-                        ? entry.amount_allotted < entry.amount
-                            ? 'dotted'
-                            : 'solid'
-                        : 'none'}"
+                    class="hover:bg-shade-default z-10 border-yellow-500 border-l-4 border-{
+                        entry.amount_allotted > 0
+                            ? entry.amount_allotted < entry.amount
+                                ? 'dotted' 
+                                : 'solid'
+                            : 'none'
+                    }"
                     use:pressaction
-                    onlongpress={() => stockEntryPressed(entry)}
-                    onshortpress={() => stockEntryPressed(entry)}
+                    onlongpress={() => stockEntryPressed(i)}
+                    onshortpress={() => stockEntryPressed(i)}
                     role="button"
                     tabindex="0"
                 ></div>

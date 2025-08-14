@@ -56,6 +56,7 @@ export class ProductState implements State {
     timestamp: undefined as string | undefined,
     interval: undefined as ReturnType<typeof setInterval> | undefined,
   };
+  public selected_stock_entry_index: number | undefined = $state(undefined)
 
   constructor(grocyData: GrocyData, inputUnitSize: string) {
     pageInfo.state.progress = 0;
@@ -115,8 +116,8 @@ export class ProductState implements State {
     }
 
     let remaining = this.consumeAmount;
-    for (const entry of this.grocyData.stock) {
-      if (skipOpen && entry.open === 1) {
+    for (const [idx, entry] of this.grocyData.stock.entries()) {
+      if ((skipOpen && entry.open === 1) || (this.selected_stock_entry_index !== undefined && idx < this.selected_stock_entry_index)) {
         entry.amount_allotted = 0;
       } else {
         entry.amount_allotted = Math.min(entry.amount, remaining);
