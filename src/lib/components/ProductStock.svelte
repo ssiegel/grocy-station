@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import type { ProductState } from "$lib/state.svelte";
 
     let { state }: { state: ProductState } = $props();
-    let product = state.grocyData;
+    let product = $derived(state.grocyData);
 </script>
 
 <div
