@@ -7,6 +7,7 @@ import { fetchDbChanged, fetchProductStateInfo } from "$lib/grocy";
 import type { GrocyData } from "$lib/grocy";
 
 abstract class State {
+  /** Statefull */
   public progress = $state(0);
 }
 
@@ -47,10 +48,14 @@ export class WaitingState implements State {
 
 export class ProductState implements State {
   public progress: number;
+  /** Statefull */
   public grocyData: GrocyData;
+  /** Statefull */
   public inputQuantity: string;
+  /** Statefull */
   public inputUnitSize: string;
   public readonly consumeAmount: number;
+  /** Statefull */
   public consumeValid = $state(false);
   public lastchanged = {
     timestamp: undefined as string | undefined,
@@ -141,6 +146,7 @@ export class ProductState implements State {
   }
 }
 
+/** Statefull */
 export let pageInfo: {
   state: State;
   stateTimeout: ReturnType<typeof setTimeout> | undefined;
