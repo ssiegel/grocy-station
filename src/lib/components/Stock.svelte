@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { ProductState } from "$lib/state.svelte";
 
     let { state }: { state: ProductState } = $props();
-    let product = state.grocyData;
+    let product = $derived(state.grocyData);
 
     function stockEntryPressed(entry_index: number) {
         state.selected_stock_entry_index = entry_index;
