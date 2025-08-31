@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <script lang="ts">
     import { pressaction } from "$lib/pressaction.svelte";
     import { formatNumber, formatDate } from "$lib/format";
-    import { GrocyObjectCache } from "$lib/grocy";
+    import { GrocyObjectCache, type GrocyStockEntry } from "$lib/grocy";
     import { ProductState } from "$lib/state.svelte";
 
     let { state }: { state: ProductState } = $props();
@@ -16,6 +16,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     function stockEntryPressed(entry_index: number) {
         state.selected_stock_entry_index = entry_index;
         state.reAllot(false);
+    }
+
+    function stockEntryLongPressed(entry: GrocyStockEntry) {
+        state.inputQuantity = entry.amount.toString();
     }
 </script>
 
@@ -93,7 +97,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             : 'none'
                     }"
                     use:pressaction
-                    onlongpress={() => stockEntryPressed(i)}
+                    onlongpress={() => stockEntryLongPressed(entry)}
                     onshortpress={() => stockEntryPressed(i)}
                     role="button"
                     tabindex="0"
