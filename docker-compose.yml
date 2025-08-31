@@ -13,12 +13,22 @@ services:
       - PUBLIC_TOPIC=hid2mqtt
       - GROCY_BASE_URL=http://grocy/api
       - GROCY_API_KEY=dummy
+    depends_on:
+      grocy:
+        condition: service_healthy
+      mosquitto:
+        consition: service_started
 
   grocy:
     image: lscr.io/linuxserver/grocy:4.5.0
     entrypoint: /bin/sh -c "sed -i -re s/production/demo/ /app/www/config-dist.php && exec /init"
     ports:
       - 8081:80
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsI -o /dev/null http://localhost/ && test -f /config/data/storage/en/recipepictures/pancakes_chocolate_sauce.jpg"]
+      interval: 10s
+      retries: 10
+      timeout: 60s
 
   mosquitto:
     image: eclipse-mosquitto
