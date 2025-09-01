@@ -42,9 +42,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     </div>
     {#if product.stock?.length}
         <div
-            class="text-label-fg px-0 grid grid-cols-[max-content_max-content_max-content_1fr] gap-x-2 text-lg"
+            class="text-label-fg px-0 grid grid-cols-[max-content_max-content_max-content_max-content_1fr] gap-x-2 text-lg"
         >
-            <div class="pl-2">Qty</div>
+            <div class="pl-2 justify-self-end">Qty</div>
+            <div class="justify-self-end">Amt</div>
             <div>
                 {product.product_details?.product.due_type === 2 ? "Exp" : "Due"}
             </div>
@@ -52,7 +53,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <div>Purchased</div>
             {#each product.stock as entry, i (entry.id)}
                 <div
-                    style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 5"
+                    style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
                     class="opacity-20 {i % 2 ? 'bg-darken' : 'bg-shade-low'}"
                 ></div>
                 <div
@@ -67,28 +68,34 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             fill="currentColor"
                         />
                     {/if}
-                    {formatNumber(entry.amount)}
+                    {formatNumber(entry.amount / state.unitSize())}
                 </div>
-                <div style="grid-area: {i * 2 + 2} / 2">
-                    {formatDate(entry.best_before_date)}
+                <div
+                    style="grid-area: {i * 2 + 2} / 2"
+                    class="justify-self-end whitespace-nowrap"
+                >
+                    {formatNumber(entry.amount, product.product_details?.quantity_unit_stock.id)}
                 </div>
                 <div style="grid-area: {i * 2 + 2} / 3">
+                    {formatDate(entry.best_before_date)}
+                </div>
+                <div style="grid-area: {i * 2 + 2} / 4">
                     {GrocyObjectCache.getCachedObject("locations", entry.location_id)?.name ??
                         `Location #${entry.location_id}`}
                 </div>
-                <div style="grid-area: {i * 2 + 2} / 4">
+                <div style="grid-area: {i * 2 + 2} / 5">
                     {formatDate(entry.purchased_date)}
                 </div>
                 {#if entry.note}
                     <div
-                        style="grid-area: {i * 2 + 3} / 2 / {i * 2 + 4} / 5"
+                        style="grid-area: {i * 2 + 3} / 3 / {i * 2 + 4} / 6"
                         class="col-start-2 col-span-3 px-4 italic"
                     >
                         {entry.note}
                     </div>
                 {/if}
                 <div
-                    style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 5"
+                    style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
                     class="hover:bg-shade-default z-10 border-yellow-500 border-l-4 border-{
                         entry.amount_allotted > 0
                             ? entry.amount_allotted < entry.amount
