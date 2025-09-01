@@ -19,7 +19,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     function stockEntryLongPressed(entry: GrocyStockEntry) {
-        state.inputQuantity = entry.amount.toString();
+        state.inputQuantity = (entry.amount / state.unitSize()).toString();
     }
 </script>
 
@@ -97,7 +97,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             : 'none'
                     }"
                     use:pressaction
-                    onlongpress={() => stockEntryLongPressed(entry)}
+                    onlongpress={() => {stockEntryPressed(i); stockEntryLongPressed(entry)}}
                     onshortpress={() => stockEntryPressed(i)}
                     role="button"
                     tabindex="0"

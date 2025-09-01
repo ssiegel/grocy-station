@@ -31,6 +31,7 @@ export type GrocyProductDetails =
     quantity_unit_price: GrocyUnit;
   };
 export type GrocyStockEntry = components["schemas"]["StockEntry"] & {
+  /** In S.I. units. */
   amount: number;
   amount_allotted: number;
 };
