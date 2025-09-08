@@ -15,19 +15,16 @@ export class InitState extends State {
   public readonly message = "Initializing…";
 }
 
-export class NinitSatet extends State {
+abstract class NotInitState extends State {
   constructor() {
     super();
     clearTimeout(pageState.timeout)
   }
 }
 
-export class ErrorState extends NinitSatet {
-  public readonly message: string;
-
-  constructor(message: string, ms?: number) {
+abstract class TimedState extends NotInitState {
+  constructor(ms: number | undefined ) {
     super();
-    this.message = message;   
     pageState.timeout = setTimeout(() => {
 
       pageState.current = new WaitingState();
@@ -35,7 +32,16 @@ export class ErrorState extends NinitSatet {
   }
 }
 
-export class WaitingState extends NinitSatet {
+export class ErrorState extends TimedState {
+  public readonly message: string;
+
+  constructor(message: string, ms?: number) {
+    super(ms);
+    this.message = message;
+  }
+}
+
+export class WaitingState extends NotInitState {
   public readonly message = "Please scan a barcode.";
 
   constructor() {
@@ -43,7 +49,7 @@ export class WaitingState extends NinitSatet {
   }
 }
 
-export class ProductState extends NinitSatet {
+export class ProductState extends NotInitState {
   /** *Statefull* */
   public grocyData: GrocyData;
   /** Number of units selected.
