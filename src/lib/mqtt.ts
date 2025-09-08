@@ -66,8 +66,7 @@ export function setupMqtt() {
       pageState.current = state;
     } catch (e) {
       if (typeof e === "string") {
-        pageState.current = new ErrorState(e);
-        pageState.current.setWaitingStateOnTimeout(10_000);
+        pageState.current = new ErrorState(e, 10_000);
       } else if (e instanceof Error) {
         pageState.current = new ErrorState(`${e.name}: ${e.message}`);
       } else {

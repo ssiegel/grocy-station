@@ -8,39 +8,34 @@ import type { GrocyData } from "$lib/grocy";
 
 export abstract class State {
   /** *Statefull* */
-  public progress = $state(0);
-  stateTimeout: ReturnType<typeof setTimeout> | undefined;
-  
-  constructor() {
-    this.progress = 0;
-    clearTimeout(this.stateTimeout);
-  }
+  public progress: number = $state(0)
+}
 
-  setWaitingStateOnTimeout(ms: number) {
-    this.stateTimeout = setTimeout(() => {
+export class InitState extends State {
+  public readonly message = "Initializing…";
+}
+
+export class NinitSatet extends State {
+  constructor() {
+    super();
+    clearTimeout(pageState.timeout)
+  }
+}
+
+export class ErrorState extends NinitSatet {
+  public readonly message: string;
+
+  constructor(message: string, ms?: number) {
+    super();
+    this.message = message;   
+    pageState.timeout = setTimeout(() => {
+
       pageState.current = new WaitingState();
     }, ms);
   }
 }
 
-export class InitState extends State {
-  public readonly message = "Initializing…";
-
-  constructor() {
-    super();
-  }
-}
-
-export class ErrorState extends State {
-  public readonly message: string;
-
-  constructor(message: string) {
-    super();
-    this.message = message;
-  }
-}
-
-export class WaitingState extends State {
+export class WaitingState extends NinitSatet {
   public readonly message = "Please scan a barcode.";
 
   constructor() {
@@ -48,7 +43,7 @@ export class WaitingState extends State {
   }
 }
 
-export class ProductState extends State {
+export class ProductState extends NinitSatet {
   /** *Statefull* */
   public grocyData: GrocyData;
   /** Number of units selected.
@@ -86,25 +81,6 @@ export class ProductState extends State {
   /** Returns {@link inputQuantity} as numeric.  */
   public unitSize(): number {
     return Number(this.inputUnitSize)
-  }
-
-  public async build(barcode: string): Promise<State> {
-    if (
-      (this.grocyData.barcode?.barcode === barcode) &&
-      Number.isFinite(this.quantity())
-    ) {
-      this.increaseQuantity();
-      return this
-    }
-
-    let productStateInfo = await fetchProductStateInfo(barcode);
-    let state = new ProductState(
-      productStateInfo.grocyData,
-      String(productStateInfo.unitSize),
-    );
-
-    state.setDbChangeInterval();
-    return state
   }
 
   setDbChangeInterval() {
@@ -151,12 +127,5 @@ export class ProductState extends State {
 }
 
 /** *Statefull* */
-export let pageState = $state({current: new InitState() as State})
-/* export let pageInfo: {
-  state: State;
-  stateTimeout: ReturnType<typeof setTimeout> | undefined;
-} = $state({ state: new InitState(), stateTimeout: undefined }); */
-/* const setPageState = (state: State) => {
-  clearTimeout(pageInfo.stateTimeout);
-  pageInfo.state = state;
-}; */
+export let pageState = $state({current: new InitState() as State, timeout: undefined as ReturnType<typeof setTimeout> | undefined})
+
