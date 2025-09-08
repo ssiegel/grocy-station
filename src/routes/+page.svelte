@@ -10,7 +10,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import {
         GrocyObjectCache,
     } from "$lib/grocy";
-    import { pageInfo, ErrorState, WaitingState, ProductState } from "$lib/state.svelte";
+    import { pageState, ErrorState, WaitingState, ProductState } from "$lib/state.svelte";
     import ProductStock from "$lib/components/ProductStock.svelte";
 
     (globalThis as any).reEnableScreen = () => {
@@ -18,9 +18,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     };
 
     $effect(() => {
-        if (pageInfo.state instanceof ProductState) {
-            void pageInfo.state.consumeAmount;
-            untrack(() => (pageInfo.state as ProductState).reAllot(false)); // TODO: why need cast?
+        if (pageState.current instanceof ProductState) {
+            void pageState.current.consumeAmount;
+            untrack(() => (pageState.current as ProductState).reAllot(false)); // TODO: why need cast?
         }
     });
 
@@ -34,7 +34,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
         setupMqtt();
 
-        new WaitingState()
+        pageState.current = new WaitingState()
     });
 
     onDestroy(() => {
@@ -43,28 +43,28 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 <div class="text-2xl flex flex-col gap-2 items-stretch min-h-screen">
-    {#if pageInfo.state.progress}
+    {#if pageState.current.progress}
         <div class="fixed top-0 left-0 w-full h-[2px] z-50 pointer-events-none">
             <div
                 class="bg-yellow-500 h-full transition-all duration-300"
-                style="width: {pageInfo.state.progress}%"
+                style="width: {pageState.current.progress}%"
             ></div>
         </div>
     {/if}
     <div class="bg-container-bg-default text-container-fg px-2 py-1">Grocy Station</div>
 
-    {#if pageInfo.state instanceof ErrorState}
+    {#if pageState.current instanceof ErrorState}
         <div
             class="text-label-fg px-2 grow flex items-center justify-center text-center text-red-400"
         >
-            {pageInfo.state.message}
+            {pageState.current.message}
         </div>
-    {:else if pageInfo.state instanceof WaitingState} <!-- !pageState.grocyData || !Object.keys(pageState.grocyData).length} -->
+    {:else if pageState.current instanceof WaitingState} <!-- !pageState.grocyData || !Object.keys(pageState.grocyData).length} -->
         <div class="text-label-fg px-2 grow flex items-center justify-center text-center">
-            {pageInfo.state.message}
+            {pageState.current.message}
         </div>
-    {:else if pageInfo.state instanceof ProductState}
-        <ProductStock state={pageInfo.state} />
+    {:else if pageState.current instanceof ProductState}
+        <ProductStock state={pageState.current} />
     {/if}
 </div>
 

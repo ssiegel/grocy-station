@@ -8,10 +8,11 @@ import { parseBarcode } from "$lib/barcode";
 import { screenOn } from "$lib/screen";
 import {
   ErrorState,
+  pageState,
   ProductState,
-  setWaitingStateOnTimeout,
-  WaitingState,
 } from "$lib/state.svelte";
+
+import { fetchProductStateInfo } from "./grocy";
 
 import mqtt from "mqtt";
 
@@ -19,7 +20,7 @@ let mqttclient: mqtt.MqttClient;
 
 export function setupMqtt() {
   if (env.PUBLIC_BROKER_URL === undefined || env.PUBLIC_TOPIC === undefined) {
-    return new ErrorState(`MQTT not configured`);
+    return pageState.current = new ErrorState(`MQTT not configured`);
   }
 
   mqttclient = mqtt.connect(env.PUBLIC_BROKER_URL);
@@ -28,7 +29,7 @@ export function setupMqtt() {
     if (env.PUBLIC_TOPIC !== undefined) {
       mqttclient.subscribe(env.PUBLIC_TOPIC, (err) => {
         if (err) {
-          new ErrorState(`Subscription error: ${err}`);
+          pageState.current = new ErrorState(`Subscription error: ${err}`);
         }
       });
     }
@@ -46,14 +47,29 @@ export function setupMqtt() {
 
     screenOn(600_000);
 
+    let barcode = parsed.grocy
+    if (
+          (pageState.current instanceof ProductState) &&
+          (pageState.current.grocyData.barcode?.barcode === barcode) &&
+          Number.isFinite(pageState.current.quantity())
+        ) {
+          return pageState.current.increaseQuantity();
+        }
     try {
-      await ProductState.build(parsed.grocy);
+      let productStateInfo = await fetchProductStateInfo(barcode);
+      let state = new ProductState(
+          productStateInfo.grocyData,
+          String(productStateInfo.unitSize),
+        );
+    
+      state.setDbChangeInterval();
+      pageState.current = state;
     } catch (e) {
       if (typeof e === "string") {
-        new ErrorState(e);
-        setWaitingStateOnTimeout(10_000);
+        pageState.current = new ErrorState(e);
+        pageState.current.setWaitingStateOnTimeout(10_000);
       } else if (e instanceof Error) {
-        new ErrorState(`${e.name}: ${e.message}`);
+        pageState.current = new ErrorState(`${e.name}: ${e.message}`);
       } else {
         throw e;
       }
@@ -61,13 +77,13 @@ export function setupMqtt() {
   });
 
   mqttclient.on("error", (err) => {
-    new ErrorState(`MQTT error: ${err}`);
+    pageState.current = new ErrorState(`MQTT error: ${err}`);
   });
 }
 
 export function disconnectMqtt() {
   if (mqttclient && mqttclient.connected) {
     mqttclient.end();
-    new ErrorState("Disconnected from MQTT broker");
+    pageState.current = new ErrorState("Disconnected from MQTT broker");
   }
 }

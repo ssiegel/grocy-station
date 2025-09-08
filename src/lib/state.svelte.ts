@@ -6,9 +6,21 @@
 import { fetchDbChanged, fetchProductStateInfo } from "$lib/grocy";
 import type { GrocyData } from "$lib/grocy";
 
-abstract class State {
+export abstract class State {
   /** *Statefull* */
   public progress = $state(0);
+  stateTimeout: ReturnType<typeof setTimeout> | undefined;
+  
+  constructor() {
+    this.progress = 0;
+    clearTimeout(this.stateTimeout);
+  }
+
+  setWaitingStateOnTimeout(ms: number) {
+    this.stateTimeout = setTimeout(() => {
+      pageState.current = new WaitingState();
+    }, ms);
+  }
 }
 
 export class InitState extends State {
@@ -19,35 +31,24 @@ export class InitState extends State {
   }
 }
 
-export class ErrorState implements State {
-  public progress: number;
+export class ErrorState extends State {
   public readonly message: string;
-  //private timeout?: ReturnType<typeof setTimeout>
 
   constructor(message: string) {
-    pageInfo.state.progress = 0;
-    this.progress = pageInfo.state.progress;
+    super();
     this.message = message;
-    setPageState(this);
   }
 }
 
-export class WaitingState implements State {
-  public progress: number;
+export class WaitingState extends State {
   public readonly message = "Please scan a barcode.";
 
   constructor() {
-    pageInfo.state.progress = 0;
-    this.progress = pageInfo.state.progress;
-    setPageState(this);
-  }
-
-  product(barcode: string) {
+    super();
   }
 }
 
-export class ProductState implements State {
-  public progress: number;
+export class ProductState extends State {
   /** *Statefull* */
   public grocyData: GrocyData;
   /** Number of units selected.
@@ -68,8 +69,7 @@ export class ProductState implements State {
   public selected_stock_entry_index: number | undefined = $state(undefined)
 
   constructor(grocyData: GrocyData, inputUnitSize: string) {
-    pageInfo.state.progress = 0;
-    this.progress = pageInfo.state.progress;
+    super();
 
     this.grocyData = $state(grocyData);
 
@@ -77,8 +77,6 @@ export class ProductState implements State {
     this.inputUnitSize = $state(inputUnitSize);
 
     this.consumeAmount = $derived(this.quantity() * this.unitSize());
-
-    setPageState(this);
   }
 
   public quantity(): number {
@@ -90,13 +88,13 @@ export class ProductState implements State {
     return Number(this.inputUnitSize)
   }
 
-  public static async build(barcode: string) {
+  public async build(barcode: string): Promise<State> {
     if (
-      pageInfo.state instanceof ProductState &&
-      (pageInfo.state.grocyData.barcode?.barcode === barcode) &&
-      Number.isFinite(pageInfo.state.quantity())
+      (this.grocyData.barcode?.barcode === barcode) &&
+      Number.isFinite(this.quantity())
     ) {
-      return pageInfo.state.increaseQuantity();
+      this.increaseQuantity();
+      return this
     }
 
     let productStateInfo = await fetchProductStateInfo(barcode);
@@ -106,6 +104,7 @@ export class ProductState implements State {
     );
 
     state.setDbChangeInterval();
+    return state
   }
 
   setDbChangeInterval() {
@@ -152,17 +151,12 @@ export class ProductState implements State {
 }
 
 /** *Statefull* */
-export let pageInfo: {
+export let pageState = $state({current: new InitState() as State})
+/* export let pageInfo: {
   state: State;
   stateTimeout: ReturnType<typeof setTimeout> | undefined;
-} = $state({ state: new InitState(), stateTimeout: undefined });
-const setPageState = (state: State) => {
+} = $state({ state: new InitState(), stateTimeout: undefined }); */
+/* const setPageState = (state: State) => {
   clearTimeout(pageInfo.stateTimeout);
   pageInfo.state = state;
-};
-
-export let setWaitingStateOnTimeout = (ms: number) => {
-  pageInfo.stateTimeout = setTimeout(() => {
-    new WaitingState();
-  }, ms);
-};
+}; */

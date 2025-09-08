@@ -5,7 +5,7 @@
 
 import { formatNumber } from "$lib/format";
 import type { components, paths } from "$lib/types/grocy.d.ts";
-import { pageInfo, ProductState } from "$lib/state.svelte";
+import { pageState, ProductState} from "$lib/state.svelte";
 import createClient from "openapi-fetch";
 
 // type GrocyObject = paths['/objects/{entity}/{objectId}']['get']['responses'][200]['content']['application/json'];
@@ -309,11 +309,11 @@ async function fetchStock(product: GrocyData, signal: AbortSignal) {
   product.stock = fetchedStock;
 
   // Force trigger recalculation of allotted amounts via $effect
-  if (pageInfo.state instanceof ProductState) {
-    let currentInputQuantity = pageInfo.state.inputQuantity;
-    pageInfo.state.inputQuantity = String(pageInfo.state.quantity() + 1); // When set to zero, consume and open butens get disabled
+  if (pageState.current instanceof ProductState) {
+    let currentInputQuantity = pageState.current.inputQuantity;
+    pageState.current.inputQuantity = String(pageState.current.quantity() + 1); // When set to zero, consume and open butens get disabled
     await Promise.resolve();
-    pageInfo.state.inputQuantity = currentInputQuantity;
+    pageState.current.inputQuantity = currentInputQuantity;
   }
 }
 
@@ -322,18 +322,18 @@ export async function fetchDbChanged() {
     AbortTimeoutController().signal,
   );
   if (
-    timestamp === undefined || !(pageInfo.state instanceof ProductState) ||
-    timestamp === pageInfo.state.lastchanged.timestamp ||
-    pageInfo.state.progress !== 0
+    timestamp === undefined || !(pageState.current instanceof ProductState) ||
+    timestamp === pageState.current.lastchanged.timestamp ||
+    pageState.current.progress !== 0
   ) {
     return;
   }
 
-  pageInfo.state.lastchanged.timestamp = timestamp;
-  pageInfo.state.progress = 1;
-  fetchStock(pageInfo.state.grocyData, AbortTimeoutController().signal);
-  pageInfo.state.progress = 100;
-  setTimeout(() => pageInfo.state.progress = 0, 300);
+  pageState.current.lastchanged.timestamp = timestamp;
+  pageState.current.progress = 1;
+  fetchStock(pageState.current.grocyData, AbortTimeoutController().signal);
+  pageState.current.progress = 100;
+  setTimeout(() => pageState.current.progress = 0, 300);
 }
 
 interface ProductStateInfo {
@@ -361,7 +361,7 @@ export async function fetchProductStateInfo(
     throw `Multiple products with barcode ${barcode} found`;
   }
   grocyData.barcode = fetchedBarcode;
-  pageInfo.state.progress = 25;
+  pageState.current.progress = 25;
 
   const fetchedProduct = await GrocyClient.getProductDetails(
     fetchedBarcode.product_id,
@@ -369,7 +369,7 @@ export async function fetchProductStateInfo(
   );
   grocyData.product_details = fetchedProduct;
   const fetchStockPromise = fetchStock(grocyData, actrl.signal);
-  pageInfo.state.progress = 50;
+  pageState.current.progress = 50;
 
   let conv = new Map<number, number>([
     [
@@ -464,36 +464,36 @@ export async function fetchProductStateInfo(
     fetchedProduct.product?.product_group_id,
   );
   grocyData.product_group = fetchedGroup;
-  pageInfo.state.progress = 75;
+  pageState.current.progress = 75;
 
   await dbChangedPromise;
   await fetchStockPromise;
-  pageInfo.state.progress = 100;
-  setTimeout(() => pageInfo.state.progress = 0, 300);
+  pageState.current.progress = 100;
+  setTimeout(() => pageState.current.progress = 0, 300);
 
   return { grocyData, unitSize };
 }
 
 export async function doConsume(open: boolean) {
   if (
-    !(pageInfo.state instanceof ProductState) ||
-    pageInfo.state.grocyData?.stock === undefined ||
-    !pageInfo.state.consumeValid || pageInfo.state.progress !== 0
+    !(pageState.current instanceof ProductState) ||
+    pageState.current.grocyData?.stock === undefined ||
+    !pageState.current.consumeValid || pageState.current.progress !== 0
   ) return;
 
   if (
-    open && pageInfo.state.grocyData.stock.some((entry) =>
+    open && pageState.current.grocyData.stock.some((entry) =>
       entry.open === 1 &&
       entry.amount_allotted !== 0
     )
   ) {
-    pageInfo.state.reAllot(true);
+    pageState.current.reAllot(true);
     return;
   }
 
-  pageInfo.state.progress = 1;
+  pageState.current.progress = 1;
 
-  const to_consume = pageInfo.state.grocyData.stock.filter((entry) =>
+  const to_consume = pageState.current.grocyData.stock.filter((entry) =>
     entry.amount_allotted !== 0 &&
     entry.product_id !== undefined
   );
@@ -509,7 +509,7 @@ export async function doConsume(open: boolean) {
         open,
         AbortTimeoutController().signal,
       ).then(() => {
-        pageInfo.state.progress = Math.max(
+        pageState.current.progress = Math.max(
           1,
           Math.round(++count / total * 100),
         );
@@ -517,8 +517,8 @@ export async function doConsume(open: boolean) {
     ),
   );
 
-  await fetchStock(pageInfo.state.grocyData, AbortTimeoutController().signal);
-  pageInfo.state.progress = 100;
+  await fetchStock(pageState.current.grocyData, AbortTimeoutController().signal);
+  pageState.current.progress = 100;
 
-  setTimeout(() => pageInfo.state.progress = 0, 300);
+  setTimeout(() => pageState.current.progress = 0, 300);
 }

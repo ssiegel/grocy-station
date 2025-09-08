@@ -113,6 +113,27 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         )}</span
                     >
                 </div>
+                <div><span>|</span></div>
+                <div>
+                    <span>{state.consumeValid}</span
+                    >
+                </div>
+                <div><span>|</span></div>
+                <div>
+                    <span>{state.progress}</span
+                    >
+                </div>
+            {:else}
+                <div><span>|</span></div>
+                <div>
+                    <span>{state.consumeValid}</span
+                    >
+                </div>
+                <div><span>|</span></div>
+                <div>
+                    <span>{state.progress}</span
+                    >
+                </div>
             {/if}
             <div class="ml-auto self-stretch">
                 <button
