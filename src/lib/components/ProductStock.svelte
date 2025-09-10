@@ -10,38 +10,38 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import Stock from "$lib/components/Stock.svelte";
     import type { ProductState } from "$lib/state.svelte";
 
-    let { state }: { state: ProductState } = $props();
-    let product = $derived(state.grocyData);
+    let { productState }: { productState: ProductState } = $props();
+    let productData = $derived(productState.grocyData);
 </script>
 
 <div
     class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between"
 >
-    <div>{product.product_details?.product.name ?? "\u00a0"}</div>
-    {#if product.product_group?.name}
+    <div>{productData.product_details?.product.name ?? "\u00a0"}</div>
+    {#if productData.product_group?.name}
         <div class="text-xl whitespace-nowrap">
-            {product.product_group.name}
+            {productData.product_group.name}
         </div>
     {/if}
 </div>
 
 <div class="text-label-fg px-2 flex flex-col gap-1 items-stretch text-2xl">
-    {#if product.barcode !== undefined && !product.barcode.barcode.startsWith("grcy:p:")}
+    {#if productData.barcode !== undefined && !productData.barcode.barcode.startsWith("grcy:p:")}
         <div class="text-xl">
-            {product.barcode.barcode}
-            <span class="italic">{product.barcode.note}</span>
+            {productData.barcode.barcode}
+            <span class="italic">{productData.barcode.note}</span>
         </div>
     {/if}
-    {#if product.product_details !== undefined}
-        {#if product.packaging_units !== undefined}
+    {#if productData.product_details !== undefined}
+        {#if productData.packaging_units !== undefined}
             <div class="flex flex-row gap-4 items-stretch justify-start">
-                {#each product.packaging_units as pu}
+                {#each productData.packaging_units as pu}
                     <button
                         class="{'bg-@-bg-default hover:bg-@-bg-hover focus:bg-@-bg-focus active:bg-@-bg-active text-@-fg'.replaceAll(
                             '@',
-                            state.unitSize() === pu.amount_stock ? 'btn' : 'input',
+                            productState.unitSize() === pu.amount ? 'btn' : 'input',
                         )} border-btn-bg-default hover:border-btn-bg-hover focus:border-btn-bg-focus active:border-btn-bg-active border-2 px-2 py-1 rounded"
-                        onclick={() => (state.inputUnitSize = String(pu.amount_stock))}
+                        onclick={() => (productState.inputUnitSize = String(pu.amount))}
                     >
                         {pu.name}
                         <br />
@@ -56,17 +56,17 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <span class="text-xl">Unit size</span>
                     <br />
                     <input
-                        bind:value={state.inputUnitSize}
+                        bind:value={productState.inputUnitSize}
                         type="text"
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            state.unitSize(),
+                            productState.unitSize(),
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
                     />
-                    {formatUnit(product.product_details.quantity_unit_stock.id)}
+                    {formatUnit(productData.product_details.quantity_unit_stock.id)}
                 </label>
             </div>
             <div><span>×</span></div>
@@ -75,12 +75,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <span class="text-xl">Quantity</span>
                     <br />
                     <input
-                        bind:value={state.inputQuantity}
+                        bind:value={productState.inputQuantity}
                         type="text"
                         inputmode="numeric"
                         size="4"
                         class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                            state.quantity(),
+                            productState.quantity(),
                         )
                             ? 'text-input-fg'
                             : 'text-red-500'}"
@@ -91,32 +91,32 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(state.quantity()))
-                            state.increaseQuantity();
+                        if (Number.isFinite(productState.quantity()))
+                            productState.increaseQuantity();
                     }}>+</button
                 >
                 <button
                     class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                     onclick={() => {
-                        if (Number.isFinite(state.quantity()))
-                            state.decreaseQuantity();
+                        if (Number.isFinite(productState.quantity()))
+                            productState.decreaseQuantity();
                     }}>−</button
                 >
             </div>
-            {#if Number.isFinite(state.consumeAmount)}
+            {#if Number.isFinite(productState.consumeAmount)}
                 <div><span>=</span></div>
                 <div>
-                    <span class={state.consumeValid ? "" : "text-red-500"}
+                    <span class={productState.consumeValid ? "" : "text-red-500"}
                         >{formatNumber(
-                            state.consumeAmount,
-                            product.product_details.quantity_unit_stock.id,
+                            productState.consumeAmount,
+                            productData.product_details.quantity_unit_stock.id,
                         )}</span
                     >
                 </div>
             {/if}
             <div class="ml-auto self-stretch">
                 <button
-                    disabled={!state.consumeValid || state.progress != 0}
+                    disabled={!productState.consumeValid || productState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Open"
                     onclick={async () => doConsume(true)}
@@ -126,7 +126,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             </div>
             <div class="self-stretch">
                 <button
-                    disabled={!state.consumeValid || state.progress != 0}
+                    disabled={!productState.consumeValid || productState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Consume"
                     onclick={async () => doConsume(false)}
@@ -136,5 +136,5 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             </div>
         </div>
     {/if}
-    <Stock {state} />
+    <Stock {productState} />
 </div>

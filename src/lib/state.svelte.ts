@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { fetchDbChanged, fetchProductStateInfo } from "$lib/grocy";
+import { fetchDbChanged } from "$lib/grocy";
 import type { GrocyData } from "$lib/grocy";
 
 export abstract class State {
@@ -56,7 +56,7 @@ export class ProductState extends NotInitState {
    * 
    * *Statefull* */
   inputQuantity: string;
-  /** In S.I. units.
+  /** Size of product unit in GrocyProduct.qu_id_stock units.
    * 
    * *Statefull* */
   inputUnitSize: string;
@@ -69,22 +69,30 @@ export class ProductState extends NotInitState {
   };
   public selected_stock_entry_index: number = $state(0)
 
-  constructor(grocyData: GrocyData, inputUnitSize: string) {
+  constructor(grocyData: GrocyData) {
     super();
 
     this.grocyData = $state(grocyData);
 
     this.inputQuantity = $state('1');
-    this.inputUnitSize = $state(inputUnitSize);
 
-    this.consumeAmount = $derived(this.quantity() * this.unitSize());
+    // grocyData.packaging_units shouldn't be null 
+    // contains at least the "Quick C" pu.
+    // inputUnitSize is set to amount of base pu at 
+    // index zero in GrocyProduct.qu_id_stock units .
+    this.inputUnitSize = $state(String(grocyData.packaging_units![0].amount));
+
+    this.consumeAmount = $derived(this.unitSize() * this.quantity());
   }
 
+  /** Returns currents state of ProductState.inputQuantity as numeric. */
   public quantity(): number {
     return Number(this.inputQuantity)
   }
 
-  /** Returns {@link inputQuantity} as numeric.  */
+  /** Returns currents state of ProductState.inputUnitSize 
+   * as numeric in GrocyProduct.qu_id_stock units.
+  */
   public unitSize(): number {
     return Number(this.inputUnitSize)
   }

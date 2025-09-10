@@ -64,7 +64,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             {pageState.current.message}
         </div>
     {:else if pageState.current instanceof ProductState}
-        <ProductStock state={pageState.current} />
+        <ProductStock productState={pageState.current} />
     {/if}
 </div>
 

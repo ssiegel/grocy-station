@@ -31,7 +31,7 @@ export type GrocyProductDetails =
     quantity_unit_price: GrocyUnit;
   };
 export type GrocyStockEntry = components["schemas"]["StockEntry"] & {
-  /** In S.I. units. */
+  /** In GrocyProduct.qu_id_stock units. */
   amount: number;
   amount_allotted: number;
 };
@@ -49,13 +49,24 @@ export type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
   barcode: string;
   userfields?: Record<string, string>;
 };
+/** Product purchasing or consumption packaging units.
+ * 
+ * eg.: A *Box* of cerial contains x *Bags* of cerial.
+ * Thus *Box* and *Bag* are packaging units of the product cerial.
+ * *Box* is the purchase pu and *Bag* is the consumption pu.
+*/
 export type PackagingUnit = {
   name: string;
+  /** In GrocyProduct.qu_id_stock units. */
+  amount: number;
+  /** Packaging unit amount formated for display */
   amount_display: string;
-  amount_stock: number;
 };
 export type GrocyData = {
   barcode?: GrocyBarcode;
+  /** In increasing order of PackagingUnit.amount 
+   * with the default consume *Packaging Unit* at index 0.
+  */
   packaging_units?: Array<PackagingUnit>;
   product_details?: GrocyProductDetails;
   product_group?: GrocyObject;
@@ -336,14 +347,9 @@ export async function fetchDbChanged() {
   setTimeout(() => pageState.current.progress = 0, 300);
 }
 
-interface ProductStateInfo {
-  grocyData: GrocyData;
-  unitSize: number;
-}
-
-export async function fetchProductStateInfo(
+export async function fetchGrocyData(
   barcode: string,
-): Promise<ProductStateInfo> {
+): Promise<GrocyData> {
   const actrl = AbortTimeoutController();
   const dbChangedPromise = fetchDbChanged();
 
@@ -352,58 +358,72 @@ export async function fetchProductStateInfo(
   // Other barcodes we fetch directly from product_barcodes because we want the userfields and
   // they are returned only from there.
   // (The 'grcy:p:'-Barcodes never have userfields, so no problem there.)
-  const [fetchedBarcode, ...fetchedExtraBarcodes] = await GrocyClient
+  const [grocyBarcode, ...grocyExtraBarcodes] = await GrocyClient
     .getBarcode(barcode, actrl.signal);
-  if (fetchedBarcode === undefined) {
+  if (grocyBarcode === undefined) {
     throw `No product with barcode ${barcode} found`;
   }
-  if (fetchedExtraBarcodes.length) {
+  if (grocyExtraBarcodes.length) {
     throw `Multiple products with barcode ${barcode} found`;
   }
-  grocyData.barcode = fetchedBarcode;
+  grocyData.barcode = grocyBarcode;
   pageState.current.progress = 25;
 
-  const fetchedProduct = await GrocyClient.getProductDetails(
-    fetchedBarcode.product_id,
+  const grocyProductDetails = await GrocyClient.getProductDetails(
+    grocyBarcode.product_id,
     actrl.signal,
   );
-  grocyData.product_details = fetchedProduct;
+  grocyData.product_details = grocyProductDetails;
   const fetchStockPromise = fetchStock(grocyData, actrl.signal);
   pageState.current.progress = 50;
 
-  let conv = new Map<number, number>([
+  /** Maps *qu_id* to *conversion factor*
+   * between *qu_id quantity units* and *stock quantity units* */
+  let quStockquConversionFactorMap = new Map<number, number>([
     [
-      fetchedProduct.product!.qu_id_purchase!,
-      fetchedProduct.qu_conversion_factor_purchase_to_stock!,
+      grocyProductDetails.product!.qu_id_purchase!,
+      grocyProductDetails.qu_conversion_factor_purchase_to_stock!,
     ],
     [
-      fetchedProduct.product!.qu_id_price!,
-      fetchedProduct.qu_conversion_factor_price_to_stock!,
+      grocyProductDetails.product!.qu_id_price!,
+      grocyProductDetails.qu_conversion_factor_price_to_stock!,
     ],
-    [fetchedProduct.product!.qu_id_stock!, 1.0],
+    [grocyProductDetails.product!.qu_id_stock!, 1.0],
   ]);
   if (
-    [fetchedProduct.product!.qu_id_consume!, fetchedBarcode.qu_id].some((x) =>
-      x != null && !conv.has(x)
+    [grocyProductDetails.product!.qu_id_consume!, grocyBarcode.qu_id].some((x) =>
+      x != null && !quStockquConversionFactorMap.has(x)
     )
   ) {
     for (
       const c of await GrocyClient.getQUConversions(
-        fetchedProduct.product!.id!,
-        fetchedProduct.product!.qu_id_stock,
+        grocyProductDetails.product!.id!,
+        grocyProductDetails.product!.qu_id_stock,
         actrl.signal,
       )
     ) {
-      conv.set(c.from_qu_id, c.factor);
+      quStockquConversionFactorMap.set(c.from_qu_id, c.factor);
     }
   }
   const pus = new Map<number, PackagingUnit>();
-  let unitSize: number;
-  if (fetchedBarcode.amount != null && fetchedBarcode.qu_id != null) {
-    const initial_unit = fetchedBarcode.amount *
-      conv.get(fetchedBarcode.qu_id)!;
+  let basePuSizeStockUnits: number;
+  // build pu units from barcode
+  if (grocyBarcode.amount != null && grocyBarcode.qu_id != null) {
+    const barcodeAmountStockUnits = grocyBarcode.amount * quStockquConversionFactorMap.get(grocyBarcode.qu_id)!;
+
+    // get pu from barcode qu
+    pus.set(barcodeAmountStockUnits, {
+        name: "Barcode PU",
+        amount_display: formatNumber(
+          grocyBarcode.amount,
+          grocyBarcode.qu_id,
+        ),
+        amount: barcodeAmountStockUnits,
+    });
+
+    // get pu from userfields
     for (
-      const line of (fetchedBarcode.userfields?.packaging_units ?? "").split(
+      const line of (grocyBarcode.userfields?.packaging_units ?? "").split(
         /\r?\n/,
       )
     ) {
@@ -412,56 +432,48 @@ export async function fetchProductStateInfo(
         continue;
       }
       const factor = Number(match[1]) / Number(match[2] ?? 1);
-      pus.set(initial_unit * factor, {
+      pus.set(barcodeAmountStockUnits * factor, {
         name: match[3],
         amount_display: formatNumber(
-          fetchedBarcode.amount * factor,
-          fetchedBarcode.qu_id,
+          grocyBarcode.amount * factor,
+          grocyBarcode.qu_id,
         ),
-        amount_stock: initial_unit * factor,
+        amount: barcodeAmountStockUnits * factor,
       });
     }
-    if (!pus.has(initial_unit)) {
-      pus.set(initial_unit, {
-        name: "Barcode PU",
-        amount_display: formatNumber(
-          fetchedBarcode.amount,
-          fetchedBarcode.qu_id,
-        ),
-        amount_stock: initial_unit,
-      });
-    }
-    unitSize = initial_unit;
+    basePuSizeStockUnits = barcodeAmountStockUnits;
+  // build pu units from grocyProductDetails
   } else {
     for (
       const pu of [
         {
           name: "Quick C",
-          amount: fetchedProduct.product.quick_consume_amount,
+          amount: grocyProductDetails.product.quick_consume_amount,
         },
-        { name: "Quick O", amount: fetchedProduct.product.quick_open_amount },
+        { name: "Quick O", amount: grocyProductDetails.product.quick_open_amount },
       ]
     ) {
       if (!pus.has(pu.amount)) {
         pus.set(pu.amount, {
           name: pu.name,
           amount_display: formatNumber(
-            pu.amount / conv.get(fetchedProduct.product.qu_id_consume)!,
-            fetchedProduct.product.qu_id_consume,
+            pu.amount / quStockquConversionFactorMap.get(grocyProductDetails.product.qu_id_consume)!,
+            grocyProductDetails.product.qu_id_consume,
           ),
-          amount_stock: pu.amount,
+          amount: pu.amount,
         });
       }
     }
-    unitSize = fetchedProduct.product!.quick_consume_amount;
+    basePuSizeStockUnits = grocyProductDetails.product!.quick_consume_amount;
   }
+
   grocyData.packaging_units = Array.from(pus.entries()).sort(([a], [b]) =>
-    a - b
+    (a === basePuSizeStockUnits ? 0 : a) - (b === basePuSizeStockUnits ? 0 : b)
   ).map(([, pu]) => pu);
 
   const fetchedGroup = await GrocyObjectCache.getObject(
     "product_groups",
-    fetchedProduct.product?.product_group_id,
+    grocyProductDetails.product?.product_group_id,
   );
   grocyData.product_group = fetchedGroup;
   pageState.current.progress = 75;
@@ -471,7 +483,7 @@ export async function fetchProductStateInfo(
   pageState.current.progress = 100;
   setTimeout(() => pageState.current.progress = 0, 300);
 
-  return { grocyData, unitSize };
+  return grocyData;
 }
 
 export async function doConsume(open: boolean) {

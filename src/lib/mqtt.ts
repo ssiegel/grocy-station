@@ -12,7 +12,7 @@ import {
   ProductState,
 } from "$lib/state.svelte";
 
-import { fetchProductStateInfo } from "./grocy";
+import { fetchGrocyData } from "./grocy";
 
 import mqtt from "mqtt";
 
@@ -56,11 +56,8 @@ export function setupMqtt() {
           return pageState.current.increaseQuantity();
         }
     try {
-      let productStateInfo = await fetchProductStateInfo(barcode);
-      let state = new ProductState(
-          productStateInfo.grocyData,
-          String(productStateInfo.unitSize),
-        );
+      let grocyData = await fetchGrocyData(barcode);
+      let state = new ProductState(grocyData);
     
       state.setDbChangeInterval();
       pageState.current = state;

@@ -10,48 +10,48 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { GrocyObjectCache, type GrocyStockEntry } from "$lib/grocy";
     import { ProductState } from "$lib/state.svelte";
 
-    let { state }: { state: ProductState } = $props();
-    let product = $derived(state.grocyData);
+    let { productState: productState }: { productState: ProductState } = $props();
+    let productData = $derived(productState.grocyData);
 
     function stockEntryPressed(entry_index: number) {
-        state.selected_stock_entry_index = entry_index;
-        state.reAllot(false);
+        productState.selected_stock_entry_index = entry_index;
+        productState.reAllot(false);
     }
 
     function stockEntryLongPressed(entry: GrocyStockEntry) {
-        state.inputQuantity = (entry.amount / state.unitSize()).toString();
+        productState.inputQuantity = (entry.amount / productState.unitSize()).toString();
     }
 </script>
 
-{#if product.stock !== undefined || product.product_details !== undefined}
+{#if productData.stock !== undefined || productData.product_details !== undefined}
     <div class="bg-container-bg-default text-container-fg px-2 py-1">
-        {#if product.product_details?.stock_amount}
+        {#if productData.product_details?.stock_amount}
             Stock amount: {formatNumber(
-                product.product_details.stock_amount,
-                product.product_details.quantity_unit_stock.id,
+                productData.product_details.stock_amount,
+                productData.product_details.quantity_unit_stock.id,
             )}
-            {#if product.product_details.stock_amount_opened}({formatNumber(
-                    product.product_details.stock_amount_opened,
+            {#if productData.product_details.stock_amount_opened}({formatNumber(
+                    productData.product_details.stock_amount_opened,
                 )} opened)
             {/if}
-        {:else if product.stock?.length}
+        {:else if productData.stock?.length}
             Stock
         {:else}
             Not in stock
         {/if}
     </div>
-    {#if product.stock?.length}
+    {#if productData.stock?.length}
         <div
             class="text-label-fg px-0 grid grid-cols-[max-content_max-content_max-content_max-content_1fr] gap-x-2 text-lg"
         >
             <div class="pl-2 justify-self-end">Qty</div>
             <div class="justify-self-end">Amt</div>
             <div>
-                {product.product_details?.product.due_type === 2 ? "Exp" : "Due"}
+                {productData.product_details?.product.due_type === 2 ? "Exp" : "Due"}
             </div>
             <div>Location</div>
             <div>Purchased</div>
-            {#each product.stock as entry, i (entry.id)}
+            {#each productData.stock as entry, i (entry.id)}
                 <div
                     style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
                     class="opacity-20 {i % 2 ? 'bg-darken' : 'bg-shade-low'}"
@@ -68,13 +68,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             fill="currentColor"
                         />
                     {/if}
-                    {formatNumber(entry.amount / state.unitSize())}
+                    {formatNumber(entry.amount / productState.unitSize())}
                 </div>
                 <div
                     style="grid-area: {i * 2 + 2} / 2"
                     class="justify-self-end whitespace-nowrap"
                 >
-                    {formatNumber(entry.amount, product.product_details?.quantity_unit_stock.id)}
+                    {formatNumber(entry.amount, productData.product_details?.quantity_unit_stock.id)}
                 </div>
                 <div style="grid-area: {i * 2 + 2} / 3">
                     {formatDate(entry.best_before_date)}
@@ -97,7 +97,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <div
                     style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
                     class="hover:bg-shade-default z-10 border-yellow-500 border-l-4 border-{
-                        entry.amount_allotted > 0
+                        productState.consumeValid && entry.amount_allotted > 0
                             ? entry.amount_allotted < entry.amount
                                 ? 'dotted' 
                                 : 'solid'
