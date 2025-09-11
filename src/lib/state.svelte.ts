@@ -139,7 +139,7 @@ export class ProductState extends NotInitState {
 
   decreaseQuantity() {
     if (Number.isFinite(this.quantity())) {
-      this.inputQuantity = String(Math.max(0, Number(this.quantity())) - 1);
+      this.inputQuantity = String(Math.max(0, Number(this.quantity()) - 1));
     }
   }
 }
