@@ -49,6 +49,13 @@ export type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
   barcode: string;
   userfields?: Record<string, string>;
 };
+
+export type GrocyShoppingList = {
+  id: number;
+  name: string;
+  description?: string;
+  row_created_timestamp: string;
+}
 /** Product purchasing or consumption packaging units.
  * 
  * eg.: A *Box* of cerial contains x *Bags* of cerial.
@@ -85,51 +92,7 @@ class GrocyClient {
     throw (error as any)?.error_message ?? Error("Grocy Communication Error");
   }
 
-  public static async getStockEntries(
-    product_id: number,
-    signal: AbortSignal,
-  ): Promise<Array<GrocyStockEntry>> {
-    return this.unwrapOFData(
-      await this.BASE_CLIENT.GET("/stock/products/{productId}/entries", {
-        params: {
-          path: { productId: product_id },
-        },
-        signal: signal,
-      }),
-    ) as Array<GrocyStockEntry>;
-  }
-
-  public static async getProductDetails(
-    product_id: number,
-    signal: AbortSignal,
-  ): Promise<GrocyProductDetails> {
-    return this.unwrapOFData(
-      await this.BASE_CLIENT.GET("/stock/products/{productId}", {
-        params: {
-          path: { productId: product_id },
-        },
-        signal: signal,
-      }),
-    ) as GrocyProductDetails;
-  }
-
-  public static async getQUConversions(
-    product_id: number,
-    qu_id_stock: number,
-    signal: AbortSignal,
-  ): Promise<Array<GrocyQUConversion>> {
-    return this.unwrapOFData(
-      await this.BASE_CLIENT.GET("/objects/{entity}", {
-        params: {
-          path: { entity: "quantity_unit_conversions_resolved" },
-          query: {
-            "query[]": [`product_id=${product_id}`, `to_qu_id=${qu_id_stock}`],
-          },
-        },
-        signal: signal,
-      }),
-    ) as Array<GrocyQUConversion>;
-  }
+  // Get Methods
 
   public static async getBarcode(
     barcode: string,
@@ -174,6 +137,69 @@ class GrocyClient {
     ).changed_time;
   }
 
+  public static async getProductDetails(
+    product_id: number,
+    signal: AbortSignal,
+  ): Promise<GrocyProductDetails> {
+    return this.unwrapOFData(
+      await this.BASE_CLIENT.GET("/stock/products/{productId}", {
+        params: {
+          path: { productId: product_id },
+        },
+        signal: signal,
+      }),
+    ) as GrocyProductDetails;
+  }
+
+  public static async getQUConversions(
+    product_id: number,
+    qu_id_stock: number,
+    signal: AbortSignal,
+  ): Promise<Array<GrocyQUConversion>> {
+    return this.unwrapOFData(
+      await this.BASE_CLIENT.GET("/objects/{entity}", {
+        params: {
+          path: { entity: "quantity_unit_conversions_resolved" },
+          query: {
+            "query[]": [`product_id=${product_id}`, `to_qu_id=${qu_id_stock}`],
+          },
+        },
+        signal: signal,
+      }),
+    ) as Array<GrocyQUConversion>;
+  }
+
+  public static async getStockEntries(
+    product_id: number,
+    signal: AbortSignal,
+  ): Promise<Array<GrocyStockEntry>> {
+    return this.unwrapOFData(
+      await this.BASE_CLIENT.GET("/stock/products/{productId}/entries", {
+        params: {
+          path: { productId: product_id },
+        },
+        signal: signal,
+      }),
+    ) as Array<GrocyStockEntry>;
+  }
+
+  // Post methods
+
+  public static async postAddMissingProducts(
+    signal: AbortSignal,
+    list_id?: number,
+  ) {
+    return this.BASE_CLIENT.POST(
+      `/stock/shoppinglist/add-missing-products`,
+      {
+        body: {
+          list_id: list_id
+        },
+        signal: signal,
+      },
+    );
+  }
+
   public static async postConsume(
     product_id: number,
     stock_id: string,
@@ -208,7 +234,8 @@ type CacheableEntities =
   | "locations"
   | "quantity_units"
   | "shopping_locations"
-  | "product_groups";
+  | "product_groups"
+  | "shopping_lists";
 export class GrocyObjectCache {
   private static readonly OBJECT_TTL = 60 * 60 * 1_000; // 1 hour
   private static readonly OBJECT_MIN_INTERVAL = 5 * 60 * 1_000; // 5 minutes
@@ -486,6 +513,14 @@ export async function fetchGrocyData(
   return grocyData;
 }
 
+/** Triggers adding missing products to shopping list *id*.
+ * If *id* is undefined loops through all shopping lists
+ */
+async function triggerShoppingListUpdate(id?: number) {
+  const actrl = AbortTimeoutController();
+  GrocyClient.postAddMissingProducts(actrl.signal, id);
+}
+
 export async function doConsume(open: boolean) {
   if (
     !(pageState.current instanceof ProductState) ||
@@ -528,6 +563,9 @@ export async function doConsume(open: boolean) {
       })
     ),
   );
+
+
+  triggerShoppingListUpdate()
 
   await fetchStock(pageState.current.grocyData, AbortTimeoutController().signal);
   pageState.current.progress = 100;
