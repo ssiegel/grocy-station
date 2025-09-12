@@ -20,7 +20,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     $effect(() => {
         if (pageState.current instanceof ProductState) {
             void pageState.current.consumeAmount;
-            untrack(() => (pageState.current as ProductState).reAllot(false)); // TODO: why need cast?
+            untrack(() => (pageState.current as ProductState).reAllot()); // TODO: why need cast?
         }
     });
 

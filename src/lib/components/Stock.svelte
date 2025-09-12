@@ -13,9 +13,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     let { productState: productState }: { productState: ProductState } = $props();
     let productData = $derived(productState.grocyData);
 
-    function stockEntryPressed(entry_index: number) {
-        productState.selected_stock_entry_index = entry_index;
-        productState.reAllot(false);
+    function stockEntryPressed(entryIndex: number) {
+        productState.selectedStockEntryIndex = entryIndex;
+        productState.reAllot();
     }
 
     function stockEntryLongPressed(entry: GrocyStockEntry) {

@@ -3,8 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { fetchDbChanged } from "$lib/grocy";
-import type { GrocyData } from "$lib/grocy";
+import { fetchDbChanged, type GrocyData } from "$lib/grocy";
 
 export abstract class State {
   /** *Statefull* */
@@ -49,9 +48,11 @@ export class WaitingState extends NotInitState {
   }
 }
 
+const GROCY_POLL_INTERVAL_MS = 15_000;
 export class ProductState extends NotInitState {
   /** *Statefull* */
   public grocyData: GrocyData;
+
   /** Number of units selected.
    * 
    * *Statefull* */
@@ -61,28 +62,28 @@ export class ProductState extends NotInitState {
    * *Statefull* */
   inputUnitSize: string;
   public readonly consumeAmount: number;
+
   /** *Statefull* */
   public consumeValid = $state(false);
-  public lastchanged = {
-    timestamp: undefined as string | undefined,
-    interval: undefined as ReturnType<typeof setInterval> | undefined,
+  public selectedStockEntryIndex: number = $state(0)
+
+  public lastchanged: {
+    timestamp: string | undefined,
+    interval: ReturnType<typeof setInterval> | undefined,
   };
-  public selected_stock_entry_index: number = $state(0)
 
   constructor(grocyData: GrocyData) {
     super();
 
     this.grocyData = $state(grocyData);
-
     this.inputQuantity = $state('1');
-
     // grocyData.packaging_units shouldn't be null 
     // contains at least the "Quick C" pu.
     // inputUnitSize is set to amount of base pu at 
     // index zero in GrocyProduct.qu_id_stock units .
     this.inputUnitSize = $state(String(grocyData.packaging_units![0].amount));
-
     this.consumeAmount = $derived(this.unitSize() * this.quantity());
+    this.lastchanged = {timestamp: undefined, interval: setInterval(fetchDbChanged, GROCY_POLL_INTERVAL_MS)}
   }
 
   /** Returns currents state of ProductState.inputQuantity as numeric. */
@@ -97,15 +98,7 @@ export class ProductState extends NotInitState {
     return Number(this.inputUnitSize)
   }
 
-  setDbChangeInterval() {
-    const GROCY_POLL_INTERVAL_MS = 15_000;
-    this.lastchanged.interval = setInterval(
-      fetchDbChanged,
-      GROCY_POLL_INTERVAL_MS,
-    );
-  }
-
-  reAllot(skipOpen: boolean) {
+  reAllot() {
     if (
       !Number.isFinite(this.consumeAmount) || this.consumeAmount <= 0 ||
       this.grocyData?.stock === undefined
@@ -114,13 +107,13 @@ export class ProductState extends NotInitState {
       return;
     }
 
-    if (this.selected_stock_entry_index >= this.grocyData.stock?.length){
-      this.selected_stock_entry_index = 0
+    if (this.selectedStockEntryIndex >= this.grocyData.stock?.length){
+      this.selectedStockEntryIndex = 0
     }
 
     let remaining = this.consumeAmount;
     for (const [idx, entry] of this.grocyData.stock.entries()) {
-      if ((skipOpen && entry.open === 1) || (idx < this.selected_stock_entry_index)) {
+      if (idx < this.selectedStockEntryIndex) {
         entry.amount_allotted = 0;
       } else {
         entry.amount_allotted = Math.min(entry.amount, remaining);

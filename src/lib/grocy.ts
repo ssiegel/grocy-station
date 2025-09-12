@@ -5,7 +5,7 @@
 
 import { formatNumber } from "$lib/format";
 import type { components, paths } from "$lib/types/grocy.d.ts";
-import { pageState, ProductState} from "$lib/state.svelte";
+import { pageState, ProductState } from "$lib/state.svelte";
 import createClient from "openapi-fetch";
 
 // type GrocyObject = paths['/objects/{entity}/{objectId}']['get']['responses'][200]['content']['application/json'];
@@ -20,49 +20,46 @@ type GrocyProduct = components["schemas"]["Product"] & {
   quick_consume_amount: number;
   due_type: 1 | 2;
 };
-export type GrocyProductDetails =
-  & components["schemas"]["ProductDetailsResponse"]
-  & {
+type GrocyUnit = components["schemas"]["QuantityUnit"];
+type GrocyProductDetails = components["schemas"]["ProductDetailsResponse"] & {
     product: GrocyProduct;
     product_barcodes: GrocyBarcode[];
     quantity_unit_stock: GrocyUnit;
     default_quantity_unit_purchase: GrocyUnit;
     default_quantity_unit_consume: GrocyUnit;
     quantity_unit_price: GrocyUnit;
-  };
+};
 export type GrocyStockEntry = components["schemas"]["StockEntry"] & {
   /** In GrocyProduct.qu_id_stock units. */
   amount: number;
   amount_allotted: number;
 };
-type GrocyUnit = components["schemas"]["QuantityUnit"];
-export type GrocyQUConversion = {
+type GrocyQUConversion = {
   id: number;
   from_qu_id: number;
   to_qu_id: number;
   factor: number;
-  product_id?: number;
+  //product_id?: number;
 };
-export type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
+type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
   id: number;
   product_id: number;
   barcode: string;
   userfields?: Record<string, string>;
 };
 
-export type GrocyShoppingList = {
+type GrocyProductGroup = {
   id: number;
   name: string;
-  description?: string;
-  row_created_timestamp: string;
 }
+
 /** Product purchasing or consumption packaging units.
  * 
  * eg.: A *Box* of cerial contains x *Bags* of cerial.
  * Thus *Box* and *Bag* are packaging units of the product cerial.
  * *Box* is the purchase pu and *Bag* is the consumption pu.
 */
-export type PackagingUnit = {
+type GrocyPackagingUnit = {
   name: string;
   /** In GrocyProduct.qu_id_stock units. */
   amount: number;
@@ -74,9 +71,9 @@ export type GrocyData = {
   /** In increasing order of PackagingUnit.amount 
    * with the default consume *Packaging Unit* at index 0.
   */
-  packaging_units?: Array<PackagingUnit>;
+  packaging_units?: Array<GrocyPackagingUnit>;
   product_details?: GrocyProductDetails;
-  product_group?: GrocyObject;
+  product_group?: GrocyProductGroup;
   stock?: Array<GrocyStockEntry>;
 };
 
@@ -432,7 +429,7 @@ export async function fetchGrocyData(
       quStockquConversionFactorMap.set(c.from_qu_id, c.factor);
     }
   }
-  const pus = new Map<number, PackagingUnit>();
+  const pus = new Map<number, GrocyPackagingUnit>();
   let basePuSizeStockUnits: number;
   // build pu units from barcode
   if (grocyBarcode.amount != null && grocyBarcode.qu_id != null) {
@@ -501,7 +498,7 @@ export async function fetchGrocyData(
   const fetchedGroup = await GrocyObjectCache.getObject(
     "product_groups",
     grocyProductDetails.product?.product_group_id,
-  );
+  ) as GrocyProductGroup;
   grocyData.product_group = fetchedGroup;
   pageState.current.progress = 75;
 
@@ -534,7 +531,8 @@ export async function doConsume(open: boolean) {
       entry.amount_allotted !== 0
     )
   ) {
-    pageState.current.reAllot(true);
+    pageState.current.selectedStockEntryIndex = Math.max(0, pageState.current.grocyData.stock.findIndex((entry) => !entry.open));
+    pageState.current.reAllot();
     return;
   }
 

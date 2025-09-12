@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // cf. https://sami.website/blog/sveltekit-api-reverse-proxy
-import { error } from '@sveltejs/kit';
-import type { Handle } from "@sveltejs/kit";
+import { error, type Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 
 const GROCY_PROXY_PATH = '/api/grocy';

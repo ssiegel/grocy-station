@@ -57,10 +57,7 @@ export function setupMqtt() {
         }
     try {
       let grocyData = await fetchGrocyData(barcode);
-      let state = new ProductState(grocyData);
-    
-      state.setDbChangeInterval();
-      pageState.current = state;
+      pageState.current = new ProductState(grocyData);
     } catch (e) {
       if (typeof e === "string") {
         pageState.current = new ErrorState(e, 10_000);
