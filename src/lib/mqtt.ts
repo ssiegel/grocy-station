@@ -8,11 +8,10 @@ import { parseBarcode } from "$lib/barcode";
 import { screenOn } from "$lib/screen";
 import {
   ErrorState,
+  fetchGrocyData,
   pageState,
   ProductState,
 } from "$lib/state.svelte";
-
-import { fetchGrocyData } from "./grocy";
 
 import mqtt from "mqtt";
 

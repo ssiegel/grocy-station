@@ -3,9 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { formatNumber } from "$lib/format";
 import type { components, paths } from "$lib/types/grocy.d.ts";
-import { pageState, ProductState } from "$lib/state.svelte";
 import createClient from "openapi-fetch";
 
 // type GrocyObject = paths['/objects/{entity}/{objectId}']['get']['responses'][200]['content']['application/json'];
@@ -48,7 +46,18 @@ type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
   userfields?: Record<string, string>;
 };
 
-type GrocyProductGroup = {
+export type GrocyShoppingListItem = components["schemas"]["ShoppingListItem"] & {
+  id: number;
+  shopping_list_id: number;
+  product_id: number;
+  done: number
+};
+export type GrocyProductGroup = {
+  id: number;
+  name: string;
+}
+
+export type GrocyShoppingList = {
   id: number;
   name: string;
 }
@@ -59,7 +68,7 @@ type GrocyProductGroup = {
  * Thus *Box* and *Bag* are packaging units of the product cerial.
  * *Box* is the purchase pu and *Bag* is the consumption pu.
 */
-type GrocyPackagingUnit = {
+export type GrocyPackagingUnit = {
   name: string;
   /** In GrocyProduct.qu_id_stock units. */
   amount: number;
@@ -75,9 +84,11 @@ export type GrocyData = {
   product_details?: GrocyProductDetails;
   product_group?: GrocyProductGroup;
   stock?: Array<GrocyStockEntry>;
+  shopping_list_items?: Array<GrocyShoppingListItem>;
+  timestamp?: string
 };
 
-class GrocyClient {
+export class GrocyClient {
   private static BASE_CLIENT = createClient<paths>({ baseUrl: "/api/grocy/" });
 
   private static unwrapOFData<D, E>(
@@ -166,6 +177,24 @@ class GrocyClient {
     ) as Array<GrocyQUConversion>;
   }
 
+  public static async getShoppingListItems(
+    product_id: number,
+    signal: AbortSignal,
+    shopping_list_id: number,
+  ): Promise<Array<GrocyShoppingListItem>> {
+    return this.unwrapOFData(
+      await this.BASE_CLIENT.GET("/objects/{entity}", {
+        params: {
+          path: { entity: "shopping_list" },
+          query: {
+            "query[]": [`product_id=${product_id}`, `shopping_list_id=${shopping_list_id}`],
+          },
+        },
+        signal: signal,
+      }),
+    ) as Array<GrocyShoppingListItem>;
+  }
+
   public static async getStockEntries(
     product_id: number,
     signal: AbortSignal,
@@ -218,13 +247,42 @@ class GrocyClient {
       },
     );
   }
-}
 
-function AbortTimeoutController() {
-  const API_TIMEOUT_MS = 10_000;
-  const ctrl = new AbortController();
-  setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
-  return ctrl;
+  public static async postAddProductShopping(
+    product_id: number,
+    list_id: number,
+    signal: AbortSignal,
+  ) {
+    return this.BASE_CLIENT.POST(
+      `/stock/shoppinglist/add-product`,
+      {
+        body: {
+          product_id: product_id,
+          list_id: list_id,
+        },
+        signal: signal,
+      },
+    );
+  }
+
+  public static async postRemoveProductShopping(
+    product_id: number,
+    list_id: number,
+    product_amount: number,
+    signal: AbortSignal,
+  ) {
+    return this.BASE_CLIENT.POST(
+      `/stock/shoppinglist/remove-product`,
+      {
+        body: {
+          product_id: product_id,
+          list_id: list_id,
+          product_amount: product_amount
+        },
+        signal: signal,
+      },
+    );
+  }
 }
 
 type CacheableEntities =
@@ -242,7 +300,7 @@ export class GrocyObjectCache {
     getPromise: Promise<void> | undefined;
   }>();
 
-  private static async fetchObjects(entity: CacheableEntities): Promise<void> {
+  private static async fetchObjects(entity: CacheableEntities, signal: AbortSignal): Promise<void> {
     const entry = GrocyObjectCache.caches.get(entity)!;
     // only issue a new request if there is none in-flight
     if (!entry.getPromise) {
@@ -250,7 +308,7 @@ export class GrocyObjectCache {
         try {
           const data = await GrocyClient.getCacheable(
             entity,
-            AbortTimeoutController().signal,
+            signal,
           );
           entry.cache.clear();
           for (const obj of data) {
@@ -275,6 +333,7 @@ export class GrocyObjectCache {
    */
   public static async getObject(
     entity: CacheableEntities,
+    signal: AbortSignal,
     id?: number,
   ): Promise<GrocyObject | undefined> {
     if (!GrocyObjectCache.caches.has(entity)) {
@@ -283,15 +342,15 @@ export class GrocyObjectCache {
         lastFetchTime: 0,
         getPromise: undefined,
       });
-      await GrocyObjectCache.fetchObjects(entity);
+      await GrocyObjectCache.fetchObjects(entity, signal);
       setInterval(
-        () => GrocyObjectCache.fetchObjects(entity),
+        () => GrocyObjectCache.fetchObjects(entity, signal),
         GrocyObjectCache.OBJECT_TTL,
       );
     }
 
     if (id === undefined) {
-      return undefined;
+      return GrocyObjectCache.caches.get(entity)?.cache.values;
     }
 
     const entry = GrocyObjectCache.caches.get(entity)!;
@@ -299,7 +358,7 @@ export class GrocyObjectCache {
       !entry.cache.has(id) &&
       Date.now() - entry.lastFetchTime > GrocyObjectCache.OBJECT_MIN_INTERVAL
     ) {
-      await GrocyObjectCache.fetchObjects(entity);
+      await GrocyObjectCache.fetchObjects(entity, signal);
     }
     return entry.cache.get(id);
   }
@@ -312,261 +371,8 @@ export class GrocyObjectCache {
     id?: number,
   ): GrocyObject | undefined {
     if (id === undefined) {
-      return undefined;
+      return GrocyObjectCache.caches.get(entity)?.cache.values;
     }
     return GrocyObjectCache.caches.get(entity)?.cache.get(id);
   }
-}
-
-async function fetchStock(product: GrocyData, signal: AbortSignal) {
-  let product_details = product.product_details;
-  const product_id = product_details?.product.id;
-  if (product_details === undefined || product_id === undefined) {
-    product.stock = undefined;
-    return;
-  }
-  //signal ??= AbortTimeoutController().signal;
-
-  const getStockPromise = GrocyClient.getStockEntries(product_id, signal);
-
-  const fetchedProductDetails = await GrocyClient.getProductDetails(
-    product_id,
-    signal,
-  );
-  product_details.stock_amount = fetchedProductDetails.stock_amount;
-  product_details.stock_amount_opened =
-    fetchedProductDetails.stock_amount_opened;
-
-  const fetchedStock = await getStockPromise;
-  for (const entry of fetchedStock) {
-    entry.amount_allotted = 0;
-  }
-  product.stock = fetchedStock;
-
-  // Force trigger recalculation of allotted amounts via $effect
-  if (pageState.current instanceof ProductState) {
-    let currentInputQuantity = pageState.current.inputQuantity;
-    pageState.current.inputQuantity = String(pageState.current.quantity() + 1); // When set to zero, consume and open butens get disabled
-    await Promise.resolve();
-    pageState.current.inputQuantity = currentInputQuantity;
-  }
-}
-
-export async function fetchDbChanged() {
-  const timestamp = await GrocyClient.getLastChangedTimestamp(
-    AbortTimeoutController().signal,
-  );
-  if (
-    timestamp === undefined || !(pageState.current instanceof ProductState) ||
-    timestamp === pageState.current.lastchanged.timestamp ||
-    pageState.current.progress !== 0
-  ) {
-    return;
-  }
-
-  pageState.current.lastchanged.timestamp = timestamp;
-  pageState.current.progress = 1;
-  fetchStock(pageState.current.grocyData, AbortTimeoutController().signal);
-  pageState.current.progress = 100;
-  setTimeout(() => pageState.current.progress = 0, 300);
-}
-
-export async function fetchGrocyData(
-  barcode: string,
-): Promise<GrocyData> {
-  const actrl = AbortTimeoutController();
-  const dbChangedPromise = fetchDbChanged();
-
-  let grocyData: GrocyData = {};
-  // We fetch 'grcy:p:'-Barcodes from product_barcodes_view because only this view provides them.
-  // Other barcodes we fetch directly from product_barcodes because we want the userfields and
-  // they are returned only from there.
-  // (The 'grcy:p:'-Barcodes never have userfields, so no problem there.)
-  const [grocyBarcode, ...grocyExtraBarcodes] = await GrocyClient
-    .getBarcode(barcode, actrl.signal);
-  if (grocyBarcode === undefined) {
-    throw `No product with barcode ${barcode} found`;
-  }
-  if (grocyExtraBarcodes.length) {
-    throw `Multiple products with barcode ${barcode} found`;
-  }
-  grocyData.barcode = grocyBarcode;
-  pageState.current.progress = 25;
-
-  const grocyProductDetails = await GrocyClient.getProductDetails(
-    grocyBarcode.product_id,
-    actrl.signal,
-  );
-  grocyData.product_details = grocyProductDetails;
-  const fetchStockPromise = fetchStock(grocyData, actrl.signal);
-  pageState.current.progress = 50;
-
-  /** Maps *qu_id* to *conversion factor*
-   * between *qu_id quantity units* and *stock quantity units* */
-  let quStockquConversionFactorMap = new Map<number, number>([
-    [
-      grocyProductDetails.product!.qu_id_purchase!,
-      grocyProductDetails.qu_conversion_factor_purchase_to_stock!,
-    ],
-    [
-      grocyProductDetails.product!.qu_id_price!,
-      grocyProductDetails.qu_conversion_factor_price_to_stock!,
-    ],
-    [grocyProductDetails.product!.qu_id_stock!, 1.0],
-  ]);
-  if (
-    [grocyProductDetails.product!.qu_id_consume!, grocyBarcode.qu_id].some((x) =>
-      x != null && !quStockquConversionFactorMap.has(x)
-    )
-  ) {
-    for (
-      const c of await GrocyClient.getQUConversions(
-        grocyProductDetails.product!.id!,
-        grocyProductDetails.product!.qu_id_stock,
-        actrl.signal,
-      )
-    ) {
-      quStockquConversionFactorMap.set(c.from_qu_id, c.factor);
-    }
-  }
-  const pus = new Map<number, GrocyPackagingUnit>();
-  let basePuSizeStockUnits: number;
-  // build pu units from barcode
-  if (grocyBarcode.amount != null && grocyBarcode.qu_id != null) {
-    const barcodeAmountStockUnits = grocyBarcode.amount * quStockquConversionFactorMap.get(grocyBarcode.qu_id)!;
-
-    // get pu from barcode qu
-    pus.set(barcodeAmountStockUnits, {
-        name: "Barcode PU",
-        amount_display: formatNumber(
-          grocyBarcode.amount,
-          grocyBarcode.qu_id,
-        ),
-        amount: barcodeAmountStockUnits,
-    });
-
-    // get pu from userfields
-    for (
-      const line of (grocyBarcode.userfields?.packaging_units ?? "").split(
-        /\r?\n/,
-      )
-    ) {
-      const match = line.match(/^(\d+)(?:\/(\d+))?\s+(.*)$/);
-      if (!match) {
-        continue;
-      }
-      const factor = Number(match[1]) / Number(match[2] ?? 1);
-      pus.set(barcodeAmountStockUnits * factor, {
-        name: match[3],
-        amount_display: formatNumber(
-          grocyBarcode.amount * factor,
-          grocyBarcode.qu_id,
-        ),
-        amount: barcodeAmountStockUnits * factor,
-      });
-    }
-    basePuSizeStockUnits = barcodeAmountStockUnits;
-  // build pu units from grocyProductDetails
-  } else {
-    for (
-      const pu of [
-        {
-          name: "Quick C",
-          amount: grocyProductDetails.product.quick_consume_amount,
-        },
-        { name: "Quick O", amount: grocyProductDetails.product.quick_open_amount },
-      ]
-    ) {
-      if (!pus.has(pu.amount)) {
-        pus.set(pu.amount, {
-          name: pu.name,
-          amount_display: formatNumber(
-            pu.amount / quStockquConversionFactorMap.get(grocyProductDetails.product.qu_id_consume)!,
-            grocyProductDetails.product.qu_id_consume,
-          ),
-          amount: pu.amount,
-        });
-      }
-    }
-    basePuSizeStockUnits = grocyProductDetails.product!.quick_consume_amount;
-  }
-
-  grocyData.packaging_units = Array.from(pus.entries()).sort(([a], [b]) =>
-    (a === basePuSizeStockUnits ? 0 : a) - (b === basePuSizeStockUnits ? 0 : b)
-  ).map(([, pu]) => pu);
-
-  const fetchedGroup = await GrocyObjectCache.getObject(
-    "product_groups",
-    grocyProductDetails.product?.product_group_id,
-  ) as GrocyProductGroup;
-  grocyData.product_group = fetchedGroup;
-  pageState.current.progress = 75;
-
-  await dbChangedPromise;
-  await fetchStockPromise;
-  pageState.current.progress = 100;
-  setTimeout(() => pageState.current.progress = 0, 300);
-
-  return grocyData;
-}
-
-/** Triggers adding missing products to shopping list *id*.
- * If *id* is undefined loops through all shopping lists
- */
-async function triggerShoppingListUpdate(id?: number) {
-  const actrl = AbortTimeoutController();
-  GrocyClient.postAddMissingProducts(actrl.signal, id);
-}
-
-export async function doConsume(open: boolean) {
-  if (
-    !(pageState.current instanceof ProductState) ||
-    pageState.current.grocyData?.stock === undefined ||
-    !pageState.current.consumeValid || pageState.current.progress !== 0
-  ) return;
-
-  if (
-    open && pageState.current.grocyData.stock.some((entry) =>
-      entry.open === 1 &&
-      entry.amount_allotted !== 0
-    )
-  ) {
-    pageState.current.selectedStockEntryIndex = Math.max(0, pageState.current.grocyData.stock.findIndex((entry) => !entry.open));
-    pageState.current.reAllot();
-    return;
-  }
-
-  pageState.current.progress = 1;
-
-  const to_consume = pageState.current.grocyData.stock.filter((entry) =>
-    entry.amount_allotted !== 0 &&
-    entry.product_id !== undefined
-  );
-
-  const total = to_consume.length + 1; // +1 for the final fetchStock()
-  let count = 0;
-  await Promise.all(
-    to_consume.map((entry) =>
-      GrocyClient.postConsume(
-        entry.product_id!,
-        entry.stock_id!,
-        entry.amount_allotted,
-        open,
-        AbortTimeoutController().signal,
-      ).then(() => {
-        pageState.current.progress = Math.max(
-          1,
-          Math.round(++count / total * 100),
-        );
-      })
-    ),
-  );
-
-
-  triggerShoppingListUpdate()
-
-  await fetchStock(pageState.current.grocyData, AbortTimeoutController().signal);
-  pageState.current.progress = 100;
-
-  setTimeout(() => pageState.current.progress = 0, 300);
 }
