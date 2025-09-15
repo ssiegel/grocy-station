@@ -180,7 +180,7 @@ async function fetchStock(product: GrocyData, signal: AbortSignal) {
 
 async function fetchShoppingListItems(product: GrocyData, signal: AbortSignal) {
   const product_id = product.barcode!.product_id;
-  let shoppingListItems = await GrocyClient.getShoppingListItems(product_id, signal, 1);
+  let shoppingListItems = await GrocyClient.getShoppingListItems(product_id, signal);
   if (!shoppingListItems) {
     const shoppingLists = await GrocyObjectCache.getObject("shopping_lists", signal) as Array<GrocyShoppingList>
     shoppingListItems = await (Promise.all(shoppingLists.filter((shoppingList) => shoppingList.id != 1).map((shoppingList) =>  GrocyClient.getShoppingListItems(product_id, signal, shoppingList.id)))).then((lists) => lists.flat())
@@ -345,7 +345,7 @@ export async function fetchGrocyData(
   grocyData.product_group = fetchedGroup;
   pageState.current.progress = 75;
 
-  grocyData.timestamp = await dbChangePromise;
+  await dbChangePromise;
   await fetchStockPromise;
   await fetchedShoppingListItemsPromise;
   pageState.current.progress = 100;
@@ -416,16 +416,24 @@ export async function doConsume(open: boolean) {
 }
 
 export async function doShoppingList(productState: ProductState) {
-  await triggerShoppingListUpdate(1)
+  pageState.current.progress = 1
+  //await triggerShoppingListUpdate() // makes amount unpredictable if adding same product.
+  pageState.current.progress = 50
   await fetchShoppingListItems(productState.grocyData, AbortTimeoutController().signal)
 
   if (productState.addShoppingListValid) {
+    let removePromises = []
     for (const doneShoppingListItem of productState.grocyData.shopping_list_items!) {
-      GrocyClient.postRemoveProductShopping(doneShoppingListItem.product_id, 1, doneShoppingListItem.amount, AbortTimeoutController().signal)
+      removePromises.push(GrocyClient.postRemoveProductShopping(doneShoppingListItem.product_id, doneShoppingListItem.amount, AbortTimeoutController().signal))
     }
-    GrocyClient.postAddProductShopping(productState.grocyData.product_details!.product.id!, 1, AbortTimeoutController().signal)
+    Promise.all(removePromises)
+    pageState.current.progress = 75
+    GrocyClient.postAddProductShopping(productState.grocyData.product_details!.product.id!, AbortTimeoutController().signal)
   }
+  fetchShoppingListItems(productState.grocyData, AbortTimeoutController().signal)
+  pageState.current.progress = 100;
 
+  setTimeout(() => pageState.current.progress = 0, 300);
 }
 
 

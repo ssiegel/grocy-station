@@ -180,14 +180,14 @@ export class GrocyClient {
   public static async getShoppingListItems(
     product_id: number,
     signal: AbortSignal,
-    shopping_list_id: number,
+    shopping_list_id?: number,
   ): Promise<Array<GrocyShoppingListItem>> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
           path: { entity: "shopping_list" },
           query: {
-            "query[]": [`product_id=${product_id}`, `shopping_list_id=${shopping_list_id}`],
+            "query[]": [`product_id=${product_id}`].concat((shopping_list_id?[`shopping_list_id=${shopping_list_id}`]:[])),
           },
         },
         signal: signal,
@@ -250,8 +250,8 @@ export class GrocyClient {
 
   public static async postAddProductShopping(
     product_id: number,
-    list_id: number,
     signal: AbortSignal,
+    list_id?: number,
   ) {
     return this.BASE_CLIENT.POST(
       `/stock/shoppinglist/add-product`,
@@ -267,9 +267,9 @@ export class GrocyClient {
 
   public static async postRemoveProductShopping(
     product_id: number,
-    list_id: number,
     product_amount: number,
     signal: AbortSignal,
+    list_id?: number,
   ) {
     return this.BASE_CLIENT.POST(
       `/stock/shoppinglist/remove-product`,
