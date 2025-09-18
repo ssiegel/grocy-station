@@ -12,10 +12,10 @@ consumed directly from the interface.
 
 ## Features
 
-* Connects to an MQTT broker and listens for barcode scan events
-* Parses GS1 and other barcode symbologies via `@point-of-sale/barcode-parser`
-* Displays product details, stock levels and packaging units
-* Allows opening or consuming items with quick actions
+- Connects to an MQTT broker and listens for barcode scan events
+- Parses GS1 and other barcode symbologies via `@point-of-sale/barcode-parser`
+- Displays product details, stock levels and packaging units
+- Allows opening or consuming items with quick actions
 
 ## Configuration
 
@@ -29,8 +29,8 @@ GROCY_BASE_URL=https://grocy.example/api     # Base URL of your Grocy API
 GROCY_API_KEY=your-api-key                   # Grocy API key used by the proxy
 ```
 
-The `PUBLIC_*` variables are exposed to the client. The Grocy variables are
-used on the server side to proxy requests securely.
+The `PUBLIC_*` variables are exposed to the client. The Grocy variables are used
+on the server side to proxy requests securely.
 
 ## Developing
 
@@ -69,8 +69,8 @@ Preview the production build locally with:
 deno task preview
 ```
 
-For a containerised demo setup, `docker-compose.yml` starts the service
-together with a demo instance of Grocy as well as a Mosquitto MQTT broker:
+For a containerised demo setup, `docker-compose.yml` starts the service together
+with a demo instance of Grocy as well as a Mosquitto MQTT broker:
 
 ```sh
 podman compose up

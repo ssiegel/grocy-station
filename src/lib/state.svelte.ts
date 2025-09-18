@@ -3,24 +3,35 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { GrocyClient, GrocyObjectCache, type GrocyData, type GrocyPackagingUnit, type GrocyProductGroup, type GrocyShoppingList, type GrocyShoppingListItem } from "$lib/grocy";
+import {
+  GrocyClient,
+  type GrocyData,
+  GrocyObjectCache,
+  type GrocyPackagingUnit,
+  type GrocyProductGroup,
+  type GrocyShoppingList,
+  type GrocyShoppingListItem,
+} from "$lib/grocy";
 import { formatNumber } from "./format";
 
 export abstract class State {
-  /** 
+  /**
    * Has effect:
    * $effect(() => {
    *    if (pageState.progress === 100) {
    *        setTimeout(() => pageState.progress = 0, 300);
    *    };
-   *})
-   * 
+   * })
+   *
    * *Statefull* */
   progress: number;
-  timeout?: ReturnType<typeof setTimeout>
-  constructor(progress: number, timeout: ReturnType<typeof setTimeout> | undefined) {
-    this.progress = $state(progress)
-    clearTimeout(timeout)
+  timeout?: ReturnType<typeof setTimeout>;
+  constructor(
+    progress: number,
+    timeout: ReturnType<typeof setTimeout> | undefined,
+  ) {
+    this.progress = $state(progress);
+    clearTimeout(timeout);
   }
 
   async fetchDbChanged() {
@@ -38,7 +49,7 @@ export abstract class State {
     const getStockPromise = GrocyClient.getStockEntries(product_id);
 
     const fetchedProductDetails = await GrocyClient.getProductDetails(
-      product_id
+      product_id,
     );
 
     product_details.stock_amount = fetchedProductDetails.stock_amount;
@@ -54,14 +65,18 @@ export abstract class State {
     // Trigger recalculation of allotted amounts
     if (this instanceof ProductState) {
       await Promise.resolve();
-      this.reAllot()
+      this.reAllot();
     }
   }
 }
 
 export abstract class MessageState extends State {
   readonly message: string;
-  constructor(message: string, progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined) {
+  constructor(
+    message: string,
+    progress: number,
+    state_timeout: ReturnType<typeof setTimeout> | undefined,
+  ) {
     super(progress, state_timeout);
     this.message = message;
   }
@@ -74,14 +89,22 @@ class InitState extends MessageState {
 }
 
 export class ErrorState extends MessageState {
-  constructor(message: string, progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined, ms?: number) {
+  constructor(
+    message: string,
+    progress: number,
+    state_timeout: ReturnType<typeof setTimeout> | undefined,
+    ms?: number,
+  ) {
     super(message, progress, state_timeout);
   }
 }
 
 export class WaitingState extends MessageState {
   public static readonly MESSAGE = "Please scan a barcode.";
-  constructor(progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined) {
+  constructor(
+    progress: number,
+    state_timeout: ReturnType<typeof setTimeout> | undefined,
+  ) {
     super(WaitingState.MESSAGE, progress, state_timeout);
   }
 }
@@ -93,22 +116,22 @@ export class ProductState extends State {
   grocyData: GrocyData;
 
   /** Number of units selected.
-   * 
+   *
    * *Statefull* */
   inputQuantity: string;
   /** Size of product unit in GrocyProduct.qu_id_stock units.
-   * 
+   *
    * *Statefull* */
   inputUnitSize: string;
-  /** 
+  /**
    * Has effect
    * $effect(() => {
    *   if (pageState instanceof ProductState) {
    *        void pageState.consumeAmount;
    *        untrack(() => pageState.reAllot());
    *    }
-   *});
-   * 
+   * });
+   *
    * *Derived* */
   public readonly consumeAmount: number;
 
@@ -117,32 +140,39 @@ export class ProductState extends State {
   /** *Derived* */
   public readonly addShoppingListValid: boolean;
   /** *Statefull* */
-  selectedStockEntryIndex: number = $state(0)
+  selectedStockEntryIndex: number = $state(0);
 
-  constructor(grocyData: GrocyData, progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined) {
+  constructor(
+    grocyData: GrocyData,
+    progress: number,
+    state_timeout: ReturnType<typeof setTimeout> | undefined,
+  ) {
     super(progress, state_timeout);
     this.grocyData = $state(grocyData);
-    this.inputQuantity = $state('1');
-    // grocyData.packaging_units shouldn't be null 
+    this.inputQuantity = $state("1");
+    // grocyData.packaging_units shouldn't be null
     // contains at least the "Quick C" pu.
-    // inputUnitSize is set to amount of base pu at 
+    // inputUnitSize is set to amount of base pu at
     // index zero in GrocyProduct.qu_id_stock units .
     this.inputUnitSize = $state(String(grocyData.packaging_units![0].amount));
     this.consumeAmount = $derived(this.unitSize() * this.quantity());
-    this.addShoppingListValid = $derived(this.grocyData.shopping_list_items!.filter((list) => !Boolean(list.done)).length === 0)
-    setInterval(() => this.fetchDbChanged(), GROCY_POLL_INTERVAL_MS)
+    this.addShoppingListValid = $derived(
+      this.grocyData.shopping_list_items!.filter((list) => !Boolean(list.done))
+        .length === 0,
+    );
+    setInterval(() => this.fetchDbChanged(), GROCY_POLL_INTERVAL_MS);
   }
 
   /** Returns currents state of ProductState.inputQuantity as numeric. */
   public quantity(): number {
-    return Number(this.inputQuantity)
+    return Number(this.inputQuantity);
   }
 
-  /** Returns currents state of ProductState.inputUnitSize 
+  /** Returns currents state of ProductState.inputUnitSize
    * as numeric in GrocyProduct.qu_id_stock units.
-  */
+   */
   public unitSize(): number {
-    return Number(this.inputUnitSize)
+    return Number(this.inputUnitSize);
   }
 
   reAllot() {
@@ -154,8 +184,8 @@ export class ProductState extends State {
       return;
     }
 
-    if (this.selectedStockEntryIndex >= this.grocyData.stock?.length){
-      this.selectedStockEntryIndex = 0
+    if (this.selectedStockEntryIndex >= this.grocyData.stock?.length) {
+      this.selectedStockEntryIndex = 0;
     }
 
     let remaining = this.consumeAmount;
@@ -198,7 +228,12 @@ export class ProductState extends State {
     this.progress = 1;
     promises.push(this.fetchStock());
     this.progress = 50;
-    promises.push(fetchShoppingListItems(this.grocyData).then((items) => {this.grocyData.shopping_list_items = items; return}));
+    promises.push(
+      fetchShoppingListItems(this.grocyData).then((items) => {
+        this.grocyData.shopping_list_items = items;
+        return;
+      }),
+    );
     Promise.all(promises);
     this.progress = 100;
   }
@@ -214,7 +249,7 @@ export class ProductState extends State {
     const getStockPromise = GrocyClient.getStockEntries(product_id);
 
     const fetchedProductDetails = await GrocyClient.getProductDetails(
-      product_id
+      product_id,
     );
 
     product_details.stock_amount = fetchedProductDetails.stock_amount;
@@ -230,17 +265,25 @@ export class ProductState extends State {
     // Trigger recalculation of allotted amounts
     if (this instanceof ProductState) {
       await Promise.resolve();
-      this.reAllot()
+      this.reAllot();
     }
   }
 }
 
-async function fetchShoppingListItems(product: GrocyData): Promise<Array<GrocyShoppingListItem>> {
+async function fetchShoppingListItems(
+  product: GrocyData,
+): Promise<Array<GrocyShoppingListItem>> {
   const product_id = product.barcode!.product_id;
   let shoppingListItems = GrocyClient.getShoppingListItems(product_id);
   if (!shoppingListItems) {
-    const shoppingLists = await GrocyObjectCache.getObject("shopping_lists") as Array<GrocyShoppingList>
-    shoppingListItems = (Promise.all(shoppingLists.filter((shoppingList) => shoppingList.id !== 1).map((shoppingList) =>  GrocyClient.getShoppingListItems(product_id, shoppingList.id)))).then((lists) => lists.flat())
+    const shoppingLists = await GrocyObjectCache.getObject(
+      "shopping_lists",
+    ) as Array<GrocyShoppingList>;
+    shoppingListItems = (Promise.all(
+      shoppingLists.filter((shoppingList) => shoppingList.id !== 1).map((
+        shoppingList,
+      ) => GrocyClient.getShoppingListItems(product_id, shoppingList.id)),
+    )).then((lists) => lists.flat());
   }
   return shoppingListItems;
 }
@@ -289,9 +332,9 @@ export async function fetchGrocyData(
     [grocyProductDetails.product!.qu_id_stock!, 1.0],
   ]);
   if (
-    [grocyProductDetails.product!.qu_id_consume!, grocyBarcode.qu_id].some((x) =>
-      x != null && !quStockquConversionFactorMap.has(x)
-    )
+    [grocyProductDetails.product!.qu_id_consume!, grocyBarcode.qu_id].some((
+      x,
+    ) => x != null && !quStockquConversionFactorMap.has(x))
   ) {
     for (
       const c of await GrocyClient.getQUConversions(
@@ -306,16 +349,17 @@ export async function fetchGrocyData(
   let basePuSizeStockUnits: number;
   // build pu units from barcode
   if (grocyBarcode.amount != null && grocyBarcode.qu_id != null) {
-    const barcodeAmountStockUnits = grocyBarcode.amount * quStockquConversionFactorMap.get(grocyBarcode.qu_id)!;
+    const barcodeAmountStockUnits = grocyBarcode.amount *
+      quStockquConversionFactorMap.get(grocyBarcode.qu_id)!;
 
     // get pu from barcode qu
     pus.set(barcodeAmountStockUnits, {
-        name: "Barcode PU",
-        amount_display: formatNumber(
-          grocyBarcode.amount,
-          grocyBarcode.qu_id,
-        ),
-        amount: barcodeAmountStockUnits,
+      name: "Barcode PU",
+      amount_display: formatNumber(
+        grocyBarcode.amount,
+        grocyBarcode.qu_id,
+      ),
+      amount: barcodeAmountStockUnits,
     });
 
     // get pu from userfields
@@ -339,7 +383,7 @@ export async function fetchGrocyData(
       });
     }
     basePuSizeStockUnits = barcodeAmountStockUnits;
-  // build pu units from grocyProductDetails
+    // build pu units from grocyProductDetails
   } else {
     for (
       const pu of [
@@ -347,14 +391,20 @@ export async function fetchGrocyData(
           name: "Quick C",
           amount: grocyProductDetails.product.quick_consume_amount,
         },
-        { name: "Quick O", amount: grocyProductDetails.product.quick_open_amount },
+        {
+          name: "Quick O",
+          amount: grocyProductDetails.product.quick_open_amount,
+        },
       ]
     ) {
       if (!pus.has(pu.amount)) {
         pus.set(pu.amount, {
           name: pu.name,
           amount_display: formatNumber(
-            pu.amount / quStockquConversionFactorMap.get(grocyProductDetails.product.qu_id_consume)!,
+            pu.amount /
+              quStockquConversionFactorMap.get(
+                grocyProductDetails.product.qu_id_consume,
+              )!,
             grocyProductDetails.product.qu_id_consume,
           ),
           amount: pu.amount,
@@ -403,7 +453,10 @@ export async function doConsume(pageState: ProductState, open: boolean) {
       entry.amount_allotted !== 0
     )
   ) {
-    pageState.selectedStockEntryIndex = Math.max(0, pageState.grocyData.stock.findIndex((entry) => !entry.open));
+    pageState.selectedStockEntryIndex = Math.max(
+      0,
+      pageState.grocyData.stock.findIndex((entry) => !entry.open),
+    );
     pageState.reAllot();
     return;
   }
@@ -433,47 +486,62 @@ export async function doConsume(pageState: ProductState, open: boolean) {
     ),
   );
 
-
-  triggerShoppingListUpdate()
+  triggerShoppingListUpdate();
 
   await pageState.fetchStock();
   pageState.progress = 100;
 }
 
 export async function doShoppingList(productState: ProductState) {
-  productState.progress = 1
+  productState.progress = 1;
   //await triggerShoppingListUpdate() // makes amount unpredictable if adding same product.
-  productState.grocyData.shopping_list_items = await fetchShoppingListItems(productState.grocyData)
-  productState.progress = 50
+  productState.grocyData.shopping_list_items = await fetchShoppingListItems(
+    productState.grocyData,
+  );
+  productState.progress = 50;
 
   if (productState.addShoppingListValid) {
-    let removePromises = []
-    for (const doneShoppingListItem of productState.grocyData.shopping_list_items!) {
-      removePromises.push(GrocyClient.postRemoveProductShopping(doneShoppingListItem.product_id, doneShoppingListItem.amount))
+    let removePromises = [];
+    for (
+      const doneShoppingListItem of productState.grocyData.shopping_list_items!
+    ) {
+      removePromises.push(
+        GrocyClient.postRemoveProductShopping(
+          doneShoppingListItem.product_id,
+          doneShoppingListItem.amount,
+        ),
+      );
     }
-    Promise.all(removePromises)
-    productState.progress = 75
-    GrocyClient.postAddProductShopping(productState.grocyData.product_details!.product.id!)
+    Promise.all(removePromises);
+    productState.progress = 75;
+    GrocyClient.postAddProductShopping(
+      productState.grocyData.product_details!.product.id!,
+    );
   }
-  fetchShoppingListItems(productState.grocyData).then((items) => productState.grocyData.shopping_list_items = items) // await? 
+  fetchShoppingListItems(productState.grocyData).then((items) =>
+    productState.grocyData.shopping_list_items = items
+  ); // await?
   productState.progress = 100;
 }
-
 
 export class Page {
   /** *Statefull* */
   state: State = $state(new InitState());
 
   toErrorState(message: string, ms?: number) {
-    this.state = new ErrorState(message, this.state.progress, this.state.timeout)
-    this.state.timeout = setTimeout(() => this.toWaitingState(), ms)
+    this.state = new ErrorState(
+      message,
+      this.state.progress,
+      this.state.timeout,
+    );
+    this.state.timeout = setTimeout(() => this.toWaitingState(), ms);
   }
 
   toWaitingState() {
-    this.state = new WaitingState(this.state.progress, this.state.timeout)
+    this.state = new WaitingState(this.state.progress, this.state.timeout);
   }
 
   async toProductState(barcode: string) {
-    this.state = await fetchGrocyData(this.state, barcode)
+    this.state = await fetchGrocyData(this.state, barcode);
   }
-};
+}

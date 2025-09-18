@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { inlineSvg } from '@svelte-put/inline-svg/vite';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { inlineSvg } from "@svelte-put/inline-svg/vite";
+import { sveltekit } from "@sveltejs/kit/vite";
+import { defineConfig } from "vite";
 
 export default defineConfig({
-	plugins: [
-		inlineSvg([{directories: 'src/assets/icons'}]),
-		sveltekit()
-	]
+  plugins: [
+    inlineSvg([{ directories: "src/assets/icons" }]),
+    sveltekit(),
+  ],
 });

@@ -20,12 +20,12 @@ type GrocyProduct = components["schemas"]["Product"] & {
 };
 type GrocyUnit = components["schemas"]["QuantityUnit"];
 type GrocyProductDetails = components["schemas"]["ProductDetailsResponse"] & {
-    product: GrocyProduct;
-    product_barcodes: GrocyBarcode[];
-    quantity_unit_stock: GrocyUnit;
-    default_quantity_unit_purchase: GrocyUnit;
-    default_quantity_unit_consume: GrocyUnit;
-    quantity_unit_price: GrocyUnit;
+  product: GrocyProduct;
+  product_barcodes: GrocyBarcode[];
+  quantity_unit_stock: GrocyUnit;
+  default_quantity_unit_purchase: GrocyUnit;
+  default_quantity_unit_consume: GrocyUnit;
+  quantity_unit_price: GrocyUnit;
 };
 export type GrocyStockEntry = components["schemas"]["StockEntry"] & {
   /** In GrocyProduct.qu_id_stock units. */
@@ -46,28 +46,30 @@ type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
   userfields?: Record<string, string>;
 };
 
-export type GrocyShoppingListItem = components["schemas"]["ShoppingListItem"] & {
-  id: number;
-  shopping_list_id: number;
-  product_id: number;
-  done: number
-};
+export type GrocyShoppingListItem =
+  & components["schemas"]["ShoppingListItem"]
+  & {
+    id: number;
+    shopping_list_id: number;
+    product_id: number;
+    done: number;
+  };
 export type GrocyProductGroup = {
   id: number;
   name: string;
-}
+};
 
 export type GrocyShoppingList = {
   id: number;
   name: string;
-}
+};
 
 /** Product purchasing or consumption packaging units.
- * 
+ *
  * eg.: A *Box* of cerial contains x *Bags* of cerial.
  * Thus *Box* and *Bag* are packaging units of the product cerial.
  * *Box* is the purchase pu and *Bag* is the consumption pu.
-*/
+ */
 export type GrocyPackagingUnit = {
   name: string;
   /** In GrocyProduct.qu_id_stock units. */
@@ -77,15 +79,15 @@ export type GrocyPackagingUnit = {
 };
 export type GrocyData = {
   barcode?: GrocyBarcode;
-  /** In increasing order of PackagingUnit.amount 
+  /** In increasing order of PackagingUnit.amount
    * with the default consume *Packaging Unit* at index 0.
-  */
+   */
   packaging_units?: Array<GrocyPackagingUnit>;
   product_details?: GrocyProductDetails;
   product_group?: GrocyProductGroup;
   stock?: Array<GrocyStockEntry>;
   shopping_list_items?: Array<GrocyShoppingListItem>;
-  timestamp?: string
+  timestamp?: string;
 };
 
 function AbortTimeoutController() {
@@ -140,8 +142,7 @@ export class GrocyClient {
     );
   }
 
-  public static async getLastChangedTimestamp(
-  ): Promise<string | undefined> {
+  public static async getLastChangedTimestamp(): Promise<string | undefined> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/system/db-changed-time", {
         signal: AbortTimeoutController().signal,
@@ -188,7 +189,9 @@ export class GrocyClient {
         params: {
           path: { entity: "shopping_list" },
           query: {
-            "query[]": [`product_id=${product_id}`].concat((shopping_list_id?[`shopping_list_id=${shopping_list_id}`]:[])),
+            "query[]": [`product_id=${product_id}`].concat(
+              shopping_list_id ? [`shopping_list_id=${shopping_list_id}`] : [],
+            ),
           },
         },
         signal: AbortTimeoutController().signal,
@@ -218,7 +221,7 @@ export class GrocyClient {
       `/stock/shoppinglist/add-missing-products`,
       {
         body: {
-          list_id: list_id
+          list_id: list_id,
         },
         signal: AbortTimeoutController().signal,
       },
@@ -273,7 +276,7 @@ export class GrocyClient {
         body: {
           product_id: product_id,
           list_id: list_id,
-          product_amount: product_amount
+          product_amount: product_amount,
         },
         signal: AbortTimeoutController().signal,
       },
@@ -336,7 +339,7 @@ export class GrocyObjectCache {
         lastFetchTime: 0,
         getPromise: undefined,
       });
-      await GrocyObjectCache.fetchObjects(entity,);
+      await GrocyObjectCache.fetchObjects(entity);
       setInterval(
         () => GrocyObjectCache.fetchObjects(entity),
         GrocyObjectCache.OBJECT_TTL,

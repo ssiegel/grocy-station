@@ -25,7 +25,10 @@ services:
     ports:
       - 8081:80
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsI -o /dev/null http://localhost/ && test -f /config/data/storage/en/recipepictures/pancakes_chocolate_sauce.jpg"]
+      test: [
+        "CMD-SHELL",
+        "curl -fsI -o /dev/null http://localhost/ && test -f /config/data/storage/en/recipepictures/pancakes_chocolate_sauce.jpg",
+      ]
       interval: 10s
       retries: 10
       timeout: 60s

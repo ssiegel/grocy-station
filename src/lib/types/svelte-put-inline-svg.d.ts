@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 declare global {
-	namespace svelteHTML {
-		interface SVGAttributes<T> {
-			'inline-src'?: string;
-		}
-	}
+  namespace svelteHTML {
+    interface SVGAttributes<T> {
+      "inline-src"?: string;
+    }
+  }
 }
 
 export {};

@@ -6,10 +6,7 @@
 import { env } from "$env/dynamic/public";
 import { parseBarcode } from "$lib/barcode";
 import { screenOn } from "$lib/screen";
-import {
-  ProductState,
-  type Page,
-} from "$lib/state.svelte";
+import { type Page, ProductState } from "$lib/state.svelte";
 
 import mqtt from "mqtt";
 
@@ -21,7 +18,7 @@ export function setupMqtt(page: Page) {
   }
 
   mqttclient = mqtt.connect(env.PUBLIC_BROKER_URL);
-  page.state.progress = 50
+  page.state.progress = 50;
 
   mqttclient.on("connect", () => {
     if (env.PUBLIC_TOPIC !== undefined) {
@@ -45,14 +42,14 @@ export function setupMqtt(page: Page) {
 
     screenOn(600_000);
 
-    let barcode = parsed.grocy
+    let barcode = parsed.grocy;
     if (
-          (page.state instanceof ProductState) &&
-          (page.state.grocyData.barcode?.barcode === barcode) &&
-          Number.isFinite(page.state.quantity())
-        ) {
-          return page.state.increaseQuantity();
-        }
+      (page.state instanceof ProductState) &&
+      (page.state.grocyData.barcode?.barcode === barcode) &&
+      Number.isFinite(page.state.quantity())
+    ) {
+      return page.state.increaseQuantity();
+    }
     try {
       await page.toProductState(barcode);
     } catch (e) {

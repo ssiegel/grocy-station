@@ -16,7 +16,7 @@ jobs:
       REGISTRY_USER: ${{ github.actor }}
       REGISTRY_PASSWORD: ${{ github.token }}
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}  # <owner>/<repo>
+      IMAGE_NAME: ${{ github.repository }} # <owner>/<repo>
 
     steps:
       - name: Install qemu dependency
