@@ -88,6 +88,13 @@ export type GrocyData = {
   timestamp?: string
 };
 
+function AbortTimeoutController() {
+  const API_TIMEOUT_MS = 10_000;
+  const ctrl = new AbortController();
+  setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+  return ctrl;
+}
+
 export class GrocyClient {
   private static BASE_CLIENT = createClient<paths>({ baseUrl: "/api/grocy/" });
 
@@ -104,7 +111,6 @@ export class GrocyClient {
 
   public static async getBarcode(
     barcode: string,
-    signal: AbortSignal,
   ): Promise<Array<GrocyBarcode>> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
@@ -116,45 +122,42 @@ export class GrocyClient {
           },
           query: { "query[]": [`barcode=${barcode}`] },
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       }),
     ) as Array<GrocyBarcode>;
   }
 
   public static async getCacheable(
     entity: CacheableEntities,
-    signal: AbortSignal,
   ) {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
           path: { entity: entity },
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       }),
     );
   }
 
   public static async getLastChangedTimestamp(
-    signal: AbortSignal,
   ): Promise<string | undefined> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/system/db-changed-time", {
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       }),
     ).changed_time;
   }
 
   public static async getProductDetails(
     product_id: number,
-    signal: AbortSignal,
   ): Promise<GrocyProductDetails> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/stock/products/{productId}", {
         params: {
           path: { productId: product_id },
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       }),
     ) as GrocyProductDetails;
   }
@@ -162,7 +165,6 @@ export class GrocyClient {
   public static async getQUConversions(
     product_id: number,
     qu_id_stock: number,
-    signal: AbortSignal,
   ): Promise<Array<GrocyQUConversion>> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
@@ -172,14 +174,13 @@ export class GrocyClient {
             "query[]": [`product_id=${product_id}`, `to_qu_id=${qu_id_stock}`],
           },
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       }),
     ) as Array<GrocyQUConversion>;
   }
 
   public static async getShoppingListItems(
     product_id: number,
-    signal: AbortSignal,
     shopping_list_id?: number,
   ): Promise<Array<GrocyShoppingListItem>> {
     return this.unwrapOFData(
@@ -190,21 +191,20 @@ export class GrocyClient {
             "query[]": [`product_id=${product_id}`].concat((shopping_list_id?[`shopping_list_id=${shopping_list_id}`]:[])),
           },
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       }),
     ) as Array<GrocyShoppingListItem>;
   }
 
   public static async getStockEntries(
     product_id: number,
-    signal: AbortSignal,
   ): Promise<Array<GrocyStockEntry>> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/stock/products/{productId}/entries", {
         params: {
           path: { productId: product_id },
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       }),
     ) as Array<GrocyStockEntry>;
   }
@@ -212,7 +212,6 @@ export class GrocyClient {
   // Post methods
 
   public static async postAddMissingProducts(
-    signal: AbortSignal,
     list_id?: number,
   ) {
     return this.BASE_CLIENT.POST(
@@ -221,7 +220,7 @@ export class GrocyClient {
         body: {
           list_id: list_id
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       },
     );
   }
@@ -231,7 +230,6 @@ export class GrocyClient {
     stock_id: string,
     amount_allotted: number,
     open: boolean,
-    signal: AbortSignal,
   ) {
     return this.BASE_CLIENT.POST(
       `/stock/products/{productId}/${open ? "open" : "consume"}`,
@@ -243,14 +241,13 @@ export class GrocyClient {
           amount: amount_allotted,
           stock_entry_id: stock_id,
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       },
     );
   }
 
   public static async postAddProductShopping(
     product_id: number,
-    signal: AbortSignal,
     list_id?: number,
   ) {
     return this.BASE_CLIENT.POST(
@@ -260,7 +257,7 @@ export class GrocyClient {
           product_id: product_id,
           list_id: list_id,
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       },
     );
   }
@@ -268,7 +265,6 @@ export class GrocyClient {
   public static async postRemoveProductShopping(
     product_id: number,
     product_amount: number,
-    signal: AbortSignal,
     list_id?: number,
   ) {
     return this.BASE_CLIENT.POST(
@@ -279,7 +275,7 @@ export class GrocyClient {
           list_id: list_id,
           product_amount: product_amount
         },
-        signal: signal,
+        signal: AbortTimeoutController().signal,
       },
     );
   }
@@ -288,9 +284,9 @@ export class GrocyClient {
 type CacheableEntities =
   | "locations"
   | "quantity_units"
+  | "shopping_lists"
   | "shopping_locations"
-  | "product_groups"
-  | "shopping_lists";
+  | "product_groups";
 export class GrocyObjectCache {
   private static readonly OBJECT_TTL = 60 * 60 * 1_000; // 1 hour
   private static readonly OBJECT_MIN_INTERVAL = 5 * 60 * 1_000; // 5 minutes
@@ -300,7 +296,7 @@ export class GrocyObjectCache {
     getPromise: Promise<void> | undefined;
   }>();
 
-  private static async fetchObjects(entity: CacheableEntities, signal: AbortSignal): Promise<void> {
+  private static async fetchObjects(entity: CacheableEntities): Promise<void> {
     const entry = GrocyObjectCache.caches.get(entity)!;
     // only issue a new request if there is none in-flight
     if (!entry.getPromise) {
@@ -308,7 +304,6 @@ export class GrocyObjectCache {
         try {
           const data = await GrocyClient.getCacheable(
             entity,
-            signal,
           );
           entry.cache.clear();
           for (const obj of data) {
@@ -333,7 +328,6 @@ export class GrocyObjectCache {
    */
   public static async getObject(
     entity: CacheableEntities,
-    signal: AbortSignal,
     id?: number,
   ): Promise<GrocyObject | undefined> {
     if (!GrocyObjectCache.caches.has(entity)) {
@@ -342,9 +336,9 @@ export class GrocyObjectCache {
         lastFetchTime: 0,
         getPromise: undefined,
       });
-      await GrocyObjectCache.fetchObjects(entity, signal);
+      await GrocyObjectCache.fetchObjects(entity,);
       setInterval(
-        () => GrocyObjectCache.fetchObjects(entity, signal),
+        () => GrocyObjectCache.fetchObjects(entity),
         GrocyObjectCache.OBJECT_TTL,
       );
     }
@@ -358,7 +352,7 @@ export class GrocyObjectCache {
       !entry.cache.has(id) &&
       Date.now() - entry.lastFetchTime > GrocyObjectCache.OBJECT_MIN_INTERVAL
     ) {
-      await GrocyObjectCache.fetchObjects(entity, signal);
+      await GrocyObjectCache.fetchObjects(entity);
     }
     return entry.cache.get(id);
   }

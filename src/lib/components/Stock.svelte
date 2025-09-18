@@ -11,7 +11,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { ProductState } from "$lib/state.svelte";
 
     let { productState: productState }: { productState: ProductState } = $props();
-    let productData = $derived(productState.grocyData);
+    const productData = $derived(productState.grocyData);
+    const productDetails = $derived(productData.product_details);
 
     function stockEntryPressed(entryIndex: number) {
         productState.selectedStockEntryIndex = entryIndex;
@@ -23,15 +24,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 </script>
 
-{#if productData.stock !== undefined || productData.product_details !== undefined}
+{#if productData.stock !== undefined || productDetails !== undefined}
     <div class="bg-container-bg-default text-container-fg px-2 py-1">
-        {#if productData.product_details?.stock_amount}
+        {#if productDetails?.stock_amount}
             Stock amount: {formatNumber(
-                productData.product_details.stock_amount,
-                productData.product_details.quantity_unit_stock.id,
+                productDetails.stock_amount,
+                productDetails.quantity_unit_stock.id,
             )}
-            {#if productData.product_details.stock_amount_opened}({formatNumber(
-                    productData.product_details.stock_amount_opened,
+            {#if productDetails.stock_amount_opened}({formatNumber(
+                    productDetails.stock_amount_opened,
                 )} opened)
             {/if}
         {:else if productData.stock?.length}
@@ -47,7 +48,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <div class="pl-2 justify-self-end">Qty</div>
             <div class="justify-self-end">Amt</div>
             <div>
-                {productData.product_details?.product.due_type === 2 ? "Exp" : "Due"}
+                {productDetails?.product.due_type === 2 ? "Exp" : "Due"}
             </div>
             <div>Location</div>
             <div>Purchased</div>
@@ -74,7 +75,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     style="grid-area: {i * 2 + 2} / 2"
                     class="justify-self-end whitespace-nowrap"
                 >
-                    {formatNumber(entry.amount, productData.product_details?.quantity_unit_stock.id)}
+                    {formatNumber(entry.amount, productDetails?.quantity_unit_stock.id)}
                 </div>
                 <div style="grid-area: {i * 2 + 2} / 3">
                     {formatDate(entry.best_before_date)}

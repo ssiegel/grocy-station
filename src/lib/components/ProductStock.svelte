@@ -10,13 +10,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { type ProductState, doConsume, doShoppingList } from "$lib/state.svelte";
 
     let { productState }: { productState: ProductState } = $props();
-    let productData = $derived(productState.grocyData);
+    const productData = $derived(productState.grocyData);
+    const productDetails = $derived(productData.product_details)
 </script>
 
 <div
     class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between"
 >
-    <div>{productData.product_details?.product.name ?? "\u00a0"}</div>
+    <div>{productDetails?.product.name ?? "\u00a0"}</div>
     {#if productData.product_group?.name}
         <div class="text-xl whitespace-nowrap">
             {productData.product_group.name}
@@ -31,7 +32,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <span class="italic">{productData.barcode.note}</span>
         </div>
     {/if}
-    {#if productData.product_details !== undefined}
+    {#if productDetails !== undefined}
         {#if productData.packaging_units !== undefined}
             <div class="flex flex-row gap-4 items-stretch justify-start">
                 {#each productData.packaging_units as pu}
@@ -65,7 +66,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             ? 'text-input-fg'
                             : 'text-red-500'}"
                     />
-                    {formatUnit(productData.product_details.quantity_unit_stock.id)}
+                    {formatUnit(productDetails.quantity_unit_stock.id)}
                 </label>
             </div>
             <div><span>×</span></div>
@@ -108,7 +109,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <span class={productState.consumeValid ? "" : "text-red-500"}
                         >{formatNumber(
                             productState.consumeAmount,
-                            productData.product_details.quantity_unit_stock.id,
+                            productDetails.quantity_unit_stock.id,
                         )}</span
                     >
                 </div>
@@ -128,7 +129,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     disabled={!productState.consumeValid || productState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Open"
-                    onclick={async () => doConsume(true)}
+                    onclick={async () => doConsume(productState, true)}
                 >
                     <svg inline-src="open" height="1.5em" fill="currentColor" />
                 </button>
@@ -138,7 +139,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     disabled={!productState.consumeValid || productState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Consume"
-                    onclick={async () => doConsume(false)}
+                    onclick={async () => doConsume(productState, false)}
                 >
                     <svg inline-src="consume" height="1.5em" fill="currentColor" />
                 </button>

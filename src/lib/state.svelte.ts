@@ -7,52 +7,90 @@ import { GrocyClient, GrocyObjectCache, type GrocyData, type GrocyPackagingUnit,
 import { formatNumber } from "./format";
 
 export abstract class State {
-  /** *Statefull* */
-  public progress: number = $state(0)
-}
+  /** 
+   * Has effect:
+   * $effect(() => {
+   *    if (pageState.progress === 100) {
+   *        setTimeout(() => pageState.progress = 0, 300);
+   *    };
+   *})
+   * 
+   * *Statefull* */
+  progress: number;
+  timeout?: ReturnType<typeof setTimeout>
+  constructor(progress: number, timeout: ReturnType<typeof setTimeout> | undefined) {
+    this.progress = $state(progress)
+    clearTimeout(timeout)
+  }
 
-export class InitState extends State {
-  public readonly message = "Initializing…";
-}
+  async fetchDbChanged() {
+    return;
+  }
 
-abstract class NotInitState extends State {
-  constructor() {
-    super();
-    clearTimeout(pageState.timeout)
+  async fetchStock(product: GrocyData) {
+    let product_details = product.product_details;
+    const product_id = product_details?.product.id;
+    if (product_details === undefined || product_id === undefined) {
+      product.stock = undefined;
+      return;
+    }
+
+    const getStockPromise = GrocyClient.getStockEntries(product_id);
+
+    const fetchedProductDetails = await GrocyClient.getProductDetails(
+      product_id
+    );
+
+    product_details.stock_amount = fetchedProductDetails.stock_amount;
+    product_details.stock_amount_opened =
+      fetchedProductDetails.stock_amount_opened;
+
+    const fetchedStock = await getStockPromise;
+    for (const entry of fetchedStock) {
+      entry.amount_allotted = 0;
+    }
+    product.stock = fetchedStock;
+
+    // Trigger recalculation of allotted amounts
+    if (this instanceof ProductState) {
+      await Promise.resolve();
+      this.reAllot()
+    }
   }
 }
 
-abstract class TimedState extends NotInitState {
-  constructor(ms: number | undefined ) {
-    super();
-    pageState.timeout = setTimeout(() => {
-
-      pageState.current = new WaitingState();
-    }, ms);
-  }
-}
-
-export class ErrorState extends TimedState {
-  public readonly message: string;
-
-  constructor(message: string, ms?: number) {
-    super(ms);
+export abstract class MessageState extends State {
+  readonly message: string;
+  constructor(message: string, progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined) {
+    super(progress, state_timeout);
     this.message = message;
   }
 }
-
-export class WaitingState extends NotInitState {
-  public readonly message = "Please scan a barcode.";
-
+class InitState extends MessageState {
+  public static readonly MESSAGE = "Initializing…";
   constructor() {
-    super();
+    super(InitState.MESSAGE, 0, undefined);
+  }
+}
+
+export class ErrorState extends MessageState {
+  constructor(message: string, progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined, ms?: number) {
+    super(message, progress, state_timeout);
+  }
+}
+
+export class WaitingState extends MessageState {
+  public static readonly MESSAGE = "Please scan a barcode.";
+  constructor(progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined) {
+    super(WaitingState.MESSAGE, progress, state_timeout);
   }
 }
 
 const GROCY_POLL_INTERVAL_MS = 15_000;
-export class ProductState extends NotInitState {
+
+export class ProductState extends State {
   /** *Statefull* */
-  public grocyData: GrocyData;
+  grocyData: GrocyData;
 
   /** Number of units selected.
    * 
@@ -62,17 +100,27 @@ export class ProductState extends NotInitState {
    * 
    * *Statefull* */
   inputUnitSize: string;
+  /** 
+   * Has effect
+   * $effect(() => {
+   *   if (pageState instanceof ProductState) {
+   *        void pageState.consumeAmount;
+   *        untrack(() => pageState.reAllot());
+   *    }
+   *});
+   * 
+   * *Derived* */
   public readonly consumeAmount: number;
 
   /** *Statefull* */
   public consumeValid = $state(false);
+  /** *Derived* */
+  public readonly addShoppingListValid: boolean;
   /** *Statefull* */
-  public addShoppingListValid: boolean;
-  public selectedStockEntryIndex: number = $state(0)
+  selectedStockEntryIndex: number = $state(0)
 
-  constructor(grocyData: GrocyData) {
-    super();
-
+  constructor(grocyData: GrocyData, progress: number, state_timeout: ReturnType<typeof setTimeout> | undefined) {
+    super(progress, state_timeout);
     this.grocyData = $state(grocyData);
     this.inputQuantity = $state('1');
     // grocyData.packaging_units shouldn't be null 
@@ -81,8 +129,8 @@ export class ProductState extends NotInitState {
     // index zero in GrocyProduct.qu_id_stock units .
     this.inputUnitSize = $state(String(grocyData.packaging_units![0].amount));
     this.consumeAmount = $derived(this.unitSize() * this.quantity());
-    this.addShoppingListValid = $derived(this.grocyData.shopping_list_items!.filter((list) => !Boolean(list.done)).length == 0)
-    setInterval(fetchDbChanged, GROCY_POLL_INTERVAL_MS)
+    this.addShoppingListValid = $derived(this.grocyData.shopping_list_items!.filter((list) => !Boolean(list.done)).length === 0)
+    setInterval(() => this.fetchDbChanged(), GROCY_POLL_INTERVAL_MS)
   }
 
   /** Returns currents state of ProductState.inputQuantity as numeric. */
@@ -134,89 +182,74 @@ export class ProductState extends NotInitState {
       this.inputQuantity = String(Math.max(0, Number(this.quantity()) - 1));
     }
   }
+
+  async fetchDbChanged() {
+    const timestamp = await GrocyClient.getLastChangedTimestamp();
+    if (
+      timestamp === undefined ||
+      timestamp === this.grocyData.timestamp ||
+      this.progress !== 0
+    ) {
+      return;
+    }
+
+    let promises: Array<Promise<void>> = [];
+    this.grocyData.timestamp = timestamp;
+    this.progress = 1;
+    promises.push(this.fetchStock());
+    this.progress = 50;
+    promises.push(fetchShoppingListItems(this.grocyData).then((items) => {this.grocyData.shopping_list_items = items; return}));
+    Promise.all(promises);
+    this.progress = 100;
+  }
+
+  async fetchStock() {
+    let product_details = this.grocyData.product_details;
+    const product_id = product_details?.product.id;
+    if (product_details === undefined || product_id === undefined) {
+      this.grocyData.stock = undefined;
+      return;
+    }
+
+    const getStockPromise = GrocyClient.getStockEntries(product_id);
+
+    const fetchedProductDetails = await GrocyClient.getProductDetails(
+      product_id
+    );
+
+    product_details.stock_amount = fetchedProductDetails.stock_amount;
+    product_details.stock_amount_opened =
+      fetchedProductDetails.stock_amount_opened;
+
+    const fetchedStock = await getStockPromise;
+    for (const entry of fetchedStock) {
+      entry.amount_allotted = 0;
+    }
+    this.grocyData.stock = fetchedStock;
+
+    // Trigger recalculation of allotted amounts
+    if (this instanceof ProductState) {
+      await Promise.resolve();
+      this.reAllot()
+    }
+  }
 }
 
-function AbortTimeoutController() {
-  const API_TIMEOUT_MS = 10_000;
-  const ctrl = new AbortController();
-  setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
-  return ctrl;
-}
-
-async function fetchStock(product: GrocyData, signal: AbortSignal) {
-  let product_details = product.product_details;
-  const product_id = product_details?.product.id;
-  if (product_details === undefined || product_id === undefined) {
-    product.stock = undefined;
-    return;
-  }
-  //signal ??= AbortTimeoutController().signal;
-
-  const getStockPromise = GrocyClient.getStockEntries(product_id, signal);
-
-  const fetchedProductDetails = await GrocyClient.getProductDetails(
-    product_id,
-    signal,
-  );
-  product_details.stock_amount = fetchedProductDetails.stock_amount;
-  product_details.stock_amount_opened =
-    fetchedProductDetails.stock_amount_opened;
-
-  const fetchedStock = await getStockPromise;
-  for (const entry of fetchedStock) {
-    entry.amount_allotted = 0;
-  }
-  product.stock = fetchedStock;
-
-  // Force trigger recalculation of allotted amounts via $effect
-  if (pageState.current instanceof ProductState) {
-    let currentInputQuantity = pageState.current.inputQuantity;
-    pageState.current.inputQuantity = String(pageState.current.quantity() + 1); // When set to zero, consume and open butens get disabled
-    await Promise.resolve();
-    pageState.current.inputQuantity = currentInputQuantity;
-  }
-}
-
-
-async function fetchShoppingListItems(product: GrocyData, signal: AbortSignal) {
+async function fetchShoppingListItems(product: GrocyData): Promise<Array<GrocyShoppingListItem>> {
   const product_id = product.barcode!.product_id;
-  let shoppingListItems = await GrocyClient.getShoppingListItems(product_id, signal);
+  let shoppingListItems = GrocyClient.getShoppingListItems(product_id);
   if (!shoppingListItems) {
-    const shoppingLists = await GrocyObjectCache.getObject("shopping_lists", signal) as Array<GrocyShoppingList>
-    shoppingListItems = await (Promise.all(shoppingLists.filter((shoppingList) => shoppingList.id != 1).map((shoppingList) =>  GrocyClient.getShoppingListItems(product_id, signal, shoppingList.id)))).then((lists) => lists.flat())
+    const shoppingLists = await GrocyObjectCache.getObject("shopping_lists") as Array<GrocyShoppingList>
+    shoppingListItems = (Promise.all(shoppingLists.filter((shoppingList) => shoppingList.id !== 1).map((shoppingList) =>  GrocyClient.getShoppingListItems(product_id, shoppingList.id)))).then((lists) => lists.flat())
   }
-  product.shopping_list_items = shoppingListItems;
-}
-
-export async function fetchDbChanged() {
-  const actrl = AbortTimeoutController();
-  const timestamp = await GrocyClient.getLastChangedTimestamp(
-    actrl.signal,
-  );
-  if (
-    timestamp === undefined || !(pageState.current instanceof ProductState) ||
-    timestamp === pageState.current.grocyData.timestamp ||
-    pageState.current.progress !== 0
-  ) {
-    return;
-  }
-
-  let promises: Array<Promise<void>> = [];
-  pageState.current.grocyData.timestamp = timestamp;
-  pageState.current.progress = 1;
-  promises.push(fetchStock(pageState.current.grocyData, actrl.signal));
-  pageState.current.progress = 50; 
-  promises.push(fetchShoppingListItems(pageState.current.grocyData, actrl.signal));
-  Promise.all(promises);
-  pageState.current.progress = 100;
-  setTimeout(() => pageState.current.progress = 0, 300);
+  return shoppingListItems;
 }
 
 export async function fetchGrocyData(
+  pageState: State,
   barcode: string,
-): Promise<GrocyData> {
-  const actrl = AbortTimeoutController();
-  const dbChangePromise = GrocyClient.getLastChangedTimestamp(actrl.signal);
+): Promise<ProductState> {
+  const dbChangePromise = GrocyClient.getLastChangedTimestamp();
 
   let grocyData: GrocyData = {};
   // We fetch 'grcy:p:'-Barcodes from product_barcodes_view because only this view provides them.
@@ -224,7 +257,7 @@ export async function fetchGrocyData(
   // they are returned only from there.
   // (The 'grcy:p:'-Barcodes never have userfields, so no problem there.)
   const [grocyBarcode, ...grocyExtraBarcodes] = await GrocyClient
-    .getBarcode(barcode, actrl.signal);
+    .getBarcode(barcode);
   if (grocyBarcode === undefined) {
     throw `No product with barcode ${barcode} found`;
   }
@@ -232,16 +265,15 @@ export async function fetchGrocyData(
     throw `Multiple products with barcode ${barcode} found`;
   }
   grocyData.barcode = grocyBarcode;
-  const fetchedShoppingListItemsPromise = fetchShoppingListItems(grocyData, actrl.signal);
-  pageState.current.progress = 25;
+  const fetchedShoppingListItemsPromise = fetchShoppingListItems(grocyData);
+  pageState.progress = 25;
 
   const grocyProductDetails = await GrocyClient.getProductDetails(
     grocyBarcode.product_id,
-    actrl.signal,
   );
   grocyData.product_details = grocyProductDetails;
-  const fetchStockPromise = fetchStock(grocyData, actrl.signal);
-  pageState.current.progress = 50;
+  const fetchStockPromise = pageState.fetchStock(grocyData);
+  pageState.progress = 50;
 
   /** Maps *qu_id* to *conversion factor*
    * between *qu_id quantity units* and *stock quantity units* */
@@ -265,7 +297,6 @@ export async function fetchGrocyData(
       const c of await GrocyClient.getQUConversions(
         grocyProductDetails.product!.id!,
         grocyProductDetails.product!.qu_id_stock,
-        actrl.signal,
       )
     ) {
       quStockquConversionFactorMap.set(c.from_qu_id, c.factor);
@@ -339,50 +370,47 @@ export async function fetchGrocyData(
 
   const fetchedGroup = await GrocyObjectCache.getObject(
     "product_groups",
-    actrl.signal,
     grocyProductDetails.product?.product_group_id,
   ) as GrocyProductGroup;
   grocyData.product_group = fetchedGroup;
-  pageState.current.progress = 75;
+  pageState.progress = 75;
 
   await dbChangePromise;
   await fetchStockPromise;
-  await fetchedShoppingListItemsPromise;
-  pageState.current.progress = 100;
-  setTimeout(() => pageState.current.progress = 0, 300);
+  grocyData.shopping_list_items = await fetchedShoppingListItemsPromise;
+  pageState.progress = 100;
+  //setTimeout(() => page.progress = 0, 300);
 
-  return grocyData;
+  return new ProductState(grocyData, pageState.progress, pageState.timeout);
 }
 
 /** Triggers adding missing products to shopping list *id*.
  * If *id* is undefined loops through all shopping lists
  */
 async function triggerShoppingListUpdate(id?: number) {
-  const actrl = AbortTimeoutController();
-  GrocyClient.postAddMissingProducts(actrl.signal, id);
+  GrocyClient.postAddMissingProducts(id);
 }
 
-export async function doConsume(open: boolean) {
+export async function doConsume(pageState: ProductState, open: boolean) {
   if (
-    !(pageState.current instanceof ProductState) ||
-    pageState.current.grocyData?.stock === undefined ||
-    !pageState.current.consumeValid || pageState.current.progress !== 0
+    pageState.grocyData?.stock === undefined ||
+    !pageState.consumeValid || pageState.progress !== 0
   ) return;
 
   if (
-    open && pageState.current.grocyData.stock.some((entry) =>
+    open && pageState.grocyData.stock.some((entry) =>
       entry.open === 1 &&
       entry.amount_allotted !== 0
     )
   ) {
-    pageState.current.selectedStockEntryIndex = Math.max(0, pageState.current.grocyData.stock.findIndex((entry) => !entry.open));
-    pageState.current.reAllot();
+    pageState.selectedStockEntryIndex = Math.max(0, pageState.grocyData.stock.findIndex((entry) => !entry.open));
+    pageState.reAllot();
     return;
   }
 
-  pageState.current.progress = 1;
+  pageState.progress = 1;
 
-  const to_consume = pageState.current.grocyData.stock.filter((entry) =>
+  const to_consume = pageState.grocyData.stock.filter((entry) =>
     entry.amount_allotted !== 0 &&
     entry.product_id !== undefined
   );
@@ -396,9 +424,8 @@ export async function doConsume(open: boolean) {
         entry.stock_id!,
         entry.amount_allotted,
         open,
-        AbortTimeoutController().signal,
       ).then(() => {
-        pageState.current.progress = Math.max(
+        pageState.progress = Math.max(
           1,
           Math.round(++count / total * 100),
         );
@@ -409,34 +436,44 @@ export async function doConsume(open: boolean) {
 
   triggerShoppingListUpdate()
 
-  await fetchStock(pageState.current.grocyData, AbortTimeoutController().signal);
-  pageState.current.progress = 100;
-
-  setTimeout(() => pageState.current.progress = 0, 300);
+  await pageState.fetchStock();
+  pageState.progress = 100;
 }
 
 export async function doShoppingList(productState: ProductState) {
-  pageState.current.progress = 1
+  productState.progress = 1
   //await triggerShoppingListUpdate() // makes amount unpredictable if adding same product.
-  pageState.current.progress = 50
-  await fetchShoppingListItems(productState.grocyData, AbortTimeoutController().signal)
+  productState.grocyData.shopping_list_items = await fetchShoppingListItems(productState.grocyData)
+  productState.progress = 50
 
   if (productState.addShoppingListValid) {
     let removePromises = []
     for (const doneShoppingListItem of productState.grocyData.shopping_list_items!) {
-      removePromises.push(GrocyClient.postRemoveProductShopping(doneShoppingListItem.product_id, doneShoppingListItem.amount, AbortTimeoutController().signal))
+      removePromises.push(GrocyClient.postRemoveProductShopping(doneShoppingListItem.product_id, doneShoppingListItem.amount))
     }
     Promise.all(removePromises)
-    pageState.current.progress = 75
-    GrocyClient.postAddProductShopping(productState.grocyData.product_details!.product.id!, AbortTimeoutController().signal)
+    productState.progress = 75
+    GrocyClient.postAddProductShopping(productState.grocyData.product_details!.product.id!)
   }
-  fetchShoppingListItems(productState.grocyData, AbortTimeoutController().signal)
-  pageState.current.progress = 100;
-
-  setTimeout(() => pageState.current.progress = 0, 300);
+  fetchShoppingListItems(productState.grocyData).then((items) => productState.grocyData.shopping_list_items = items) // await? 
+  productState.progress = 100;
 }
 
 
-/** *Statefull* */
-export let pageState = $state({current: new InitState() as State, timeout: undefined as ReturnType<typeof setTimeout> | undefined})
+export class Page {
+  /** *Statefull* */
+  state: State = $state(new InitState());
 
+  toErrorState(message: string, ms?: number) {
+    this.state = new ErrorState(message, this.state.progress, this.state.timeout)
+    this.state.timeout = setTimeout(() => this.toWaitingState(), ms)
+  }
+
+  toWaitingState() {
+    this.state = new WaitingState(this.state.progress, this.state.timeout)
+  }
+
+  async toProductState(barcode: string) {
+    this.state = await fetchGrocyData(this.state, barcode)
+  }
+};
