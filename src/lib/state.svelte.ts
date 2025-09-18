@@ -34,12 +34,12 @@ export abstract class State {
     clearTimeout(timeout);
   }
 
-  async fetchDbChanged() {
+  fetchDbChanged() {
     return;
   }
 
   async fetchStock(product: GrocyData) {
-    let product_details = product.product_details;
+    const product_details = product.product_details;
     const product_id = product_details?.product.id;
     if (product_details === undefined || product_id === undefined) {
       product.stock = undefined;
@@ -93,7 +93,6 @@ export class ErrorState extends MessageState {
     message: string,
     progress: number,
     state_timeout: ReturnType<typeof setTimeout> | undefined,
-    ms?: number,
   ) {
     super(message, progress, state_timeout);
   }
@@ -157,7 +156,7 @@ export class ProductState extends State {
     this.inputUnitSize = $state(String(grocyData.packaging_units![0].amount));
     this.consumeAmount = $derived(this.unitSize() * this.quantity());
     this.addShoppingListValid = $derived(
-      this.grocyData.shopping_list_items!.filter((list) => !Boolean(list.done))
+      this.grocyData.shopping_list_items!.filter((list) => !list.done)
         .length === 0,
     );
     setInterval(() => this.fetchDbChanged(), GROCY_POLL_INTERVAL_MS);
@@ -223,7 +222,7 @@ export class ProductState extends State {
       return;
     }
 
-    let promises: Array<Promise<void>> = [];
+    const promises: Array<Promise<void>> = [];
     this.grocyData.timestamp = timestamp;
     this.progress = 1;
     promises.push(this.fetchStock());
@@ -239,7 +238,7 @@ export class ProductState extends State {
   }
 
   async fetchStock() {
-    let product_details = this.grocyData.product_details;
+    const product_details = this.grocyData.product_details;
     const product_id = product_details?.product.id;
     if (product_details === undefined || product_id === undefined) {
       this.grocyData.stock = undefined;
@@ -294,7 +293,7 @@ export async function fetchGrocyData(
 ): Promise<ProductState> {
   const dbChangePromise = GrocyClient.getLastChangedTimestamp();
 
-  let grocyData: GrocyData = {};
+  const grocyData: GrocyData = {};
   // We fetch 'grcy:p:'-Barcodes from product_barcodes_view because only this view provides them.
   // Other barcodes we fetch directly from product_barcodes because we want the userfields and
   // they are returned only from there.
@@ -320,7 +319,7 @@ export async function fetchGrocyData(
 
   /** Maps *qu_id* to *conversion factor*
    * between *qu_id quantity units* and *stock quantity units* */
-  let quStockquConversionFactorMap = new Map<number, number>([
+  const quStockquConversionFactorMap = new Map<number, number>([
     [
       grocyProductDetails.product!.qu_id_purchase!,
       grocyProductDetails.qu_conversion_factor_purchase_to_stock!,
@@ -438,7 +437,7 @@ export async function fetchGrocyData(
  * If *id* is undefined loops through all shopping lists
  */
 async function triggerShoppingListUpdate(id?: number) {
-  GrocyClient.postAddMissingProducts(id);
+  await GrocyClient.postAddMissingProducts(id);
 }
 
 export async function doConsume(pageState: ProductState, open: boolean) {
@@ -501,7 +500,7 @@ export async function doShoppingList(productState: ProductState) {
   productState.progress = 50;
 
   if (productState.addShoppingListValid) {
-    let removePromises = [];
+    const removePromises = [];
     for (
       const doneShoppingListItem of productState.grocyData.shopping_list_items!
     ) {

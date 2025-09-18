@@ -29,7 +29,7 @@ export function parseBarcode(payload: Buffer): BarcodeData {
     result.symbology = "itf";
   }
 
-  let gs1 = GS1.parse(result);
+  const gs1 = GS1.parse(result);
   if (gs1) {
     result.data = gs1;
   }

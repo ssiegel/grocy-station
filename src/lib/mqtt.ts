@@ -35,14 +35,14 @@ export function setupMqtt(page: Page) {
       return;
     }
 
-    let parsed = parseBarcode(payload);
+    const parsed = parseBarcode(payload);
     if (!parsed.grocy) {
       return;
     }
 
     screenOn(600_000);
 
-    let barcode = parsed.grocy;
+    const barcode = parsed.grocy;
     if (
       (page.state instanceof ProductState) &&
       (page.state.grocyData.barcode?.barcode === barcode) &&

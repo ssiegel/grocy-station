@@ -97,16 +97,20 @@ function AbortTimeoutController() {
   return ctrl;
 }
 
+type GrocyErrorReply =
+  | components["schemas"]["Error400"]
+  | components["schemas"]["Error500"];
+
 export class GrocyClient {
   private static BASE_CLIENT = createClient<paths>({ baseUrl: "/api/grocy/" });
 
-  private static unwrapOFData<D, E>(
-    { data, error }: { data?: D; error?: E },
+  private static unwrapOFData<D>(
+    { data, error }: { data?: D; error?: GrocyErrorReply },
   ): D {
     if (data !== undefined) {
       return data;
     }
-    throw (error as any)?.error_message ?? Error("Grocy Communication Error");
+    throw error?.error_message ?? Error("Grocy Communication Error");
   }
 
   // Get Methods
@@ -217,7 +221,7 @@ export class GrocyClient {
   public static async postAddMissingProducts(
     list_id?: number,
   ) {
-    return this.BASE_CLIENT.POST(
+    return await this.BASE_CLIENT.POST(
       `/stock/shoppinglist/add-missing-products`,
       {
         body: {
@@ -234,7 +238,7 @@ export class GrocyClient {
     amount_allotted: number,
     open: boolean,
   ) {
-    return this.BASE_CLIENT.POST(
+    return await this.BASE_CLIENT.POST(
       `/stock/products/{productId}/${open ? "open" : "consume"}`,
       {
         params: {
@@ -253,7 +257,7 @@ export class GrocyClient {
     product_id: number,
     list_id?: number,
   ) {
-    return this.BASE_CLIENT.POST(
+    return await this.BASE_CLIENT.POST(
       `/stock/shoppinglist/add-product`,
       {
         body: {
@@ -270,7 +274,7 @@ export class GrocyClient {
     product_amount: number,
     list_id?: number,
   ) {
-    return this.BASE_CLIENT.POST(
+    return await this.BASE_CLIENT.POST(
       `/stock/shoppinglist/remove-product`,
       {
         body: {
@@ -321,7 +325,7 @@ export class GrocyObjectCache {
         }
       })();
     }
-    return entry.getPromise;
+    return await entry.getPromise;
   }
 
   /**
