@@ -41,17 +41,9 @@ export function setupMqtt(page: Page) {
     }
 
     screenOn(600_000);
-
-    const barcode = parsed.grocy;
-    if (
-      (page.state instanceof ProductState) &&
-      (page.state.grocyData.barcode?.barcode === barcode) &&
-      Number.isFinite(page.state.quantity())
-    ) {
-      return page.state.increaseQuantity();
-    }
+    
     try {
-      await page.toProductState(barcode);
+      await page.doBarcode(parsed.grocy);
     } catch (e) {
       if (typeof e === "string") {
         page.toErrorState(e, 10_000);

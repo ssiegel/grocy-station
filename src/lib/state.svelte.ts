@@ -7,10 +7,10 @@ import {
   GrocyClient,
   type GrocyData,
   GrocyObjectCache,
-  type GrocyPackagingUnit,
   type GrocyProductGroup,
   type GrocyShoppingList,
   type GrocyShoppingListItem,
+  type GrocyStockEntry,
 } from "$lib/grocy";
 import { PackagingUnitsBuilder } from "./packaging";
 
@@ -38,34 +38,58 @@ export abstract class State {
     return;
   }
 
-  async fetchStock(product: GrocyData) {
-    const product_details = product.product_details;
-    const product_id = product_details?.product.id;
-    if (product_details === undefined || product_id === undefined) {
-      product.stock = undefined;
-      return;
-    }
-
-    const getStockPromise = GrocyClient.getStockEntries(product_id);
-
-    const fetchedProductDetails = await GrocyClient.getProductDetails(
-      product_id,
-    );
-
-    product_details.stock_amount = fetchedProductDetails.stock_amount;
-    product_details.stock_amount_opened =
-      fetchedProductDetails.stock_amount_opened;
-
-    const fetchedStock = await getStockPromise;
+  async fetchStockFor(productId: number): Promise<GrocyStockEntry[]> {
+    const fetchedStock = await GrocyClient.getStockEntries(productId);
     for (const entry of fetchedStock) {
       entry.amount_allotted = 0;
     }
-    product.stock = fetchedStock;
+    return fetchedStock;
+  }
 
-    // Trigger recalculation of allotted amounts
-    if (this instanceof ProductState) {
-      this.reAllot();
+  async fetchGrocyData(
+    barcode: string,
+  ): Promise<GrocyData> {
+    const dbChangePromise = GrocyClient.getLastChangedTimestamp();
+
+    // We fetch 'grcy:p:'-Barcodes from product_barcodes_view because only this view provides them.
+    // Other barcodes we fetch directly from product_barcodes because we want the userfields and
+    // they are returned only from there.
+    // (The 'grcy:p:'-Barcodes never have userfields, so no problem there.)
+    const [grocyBarcode, ...grocyExtraBarcodes] = await GrocyClient.getBarcode(barcode);
+    if (grocyBarcode === undefined) {
+      throw `No product with barcode ${barcode} found`;
     }
+    if (grocyExtraBarcodes.length) {
+      throw `Multiple products with barcode ${barcode} found`;
+    }
+    const fetchShoppingListItemsPromise = fetchShoppingListItems(grocyBarcode.product_id);
+    this.progress = 25;
+
+    const grocyProductDetails = await GrocyClient.getProductDetails(
+      grocyBarcode.product_id,
+    );
+    const buildPackagingUnitsPromise = new PackagingUnitsBuilder(
+      grocyBarcode,
+      grocyProductDetails,
+    ).build();
+    const fetchGroupPromise = GrocyObjectCache.getObject(
+      "product_groups",
+      grocyProductDetails.product?.product_group_id,
+    );
+    const fetchStockPromise = this.fetchStockFor(grocyProductDetails.product.id!); // TODO: can be fetched earlier?
+    this.progress = 75;
+
+    const grocyData = {
+      barcode: grocyBarcode, 
+      packaging_units: await buildPackagingUnitsPromise,
+      product_details: grocyProductDetails,
+      product_group: await fetchGroupPromise as GrocyProductGroup,
+      stock: await fetchStockPromise,
+      shopping_list_items: await fetchShoppingListItemsPromise,
+      timestamp: await dbChangePromise,
+    }
+    this.progress = 100;
+    return grocyData;
   }
 }
 
@@ -227,7 +251,7 @@ export class ProductState extends State {
     promises.push(this.fetchStock());
     this.progress = 50;
     promises.push(
-      fetchShoppingListItems(this.grocyData).then((items) => {
+      fetchShoppingListItems(this.grocyData.product_details.product.id!).then((items) => {
         this.grocyData.shopping_list_items = items;
       }),
     );
@@ -237,14 +261,10 @@ export class ProductState extends State {
   }
 
   async fetchStock() {
-    const product_details = this.grocyData.product_details;
-    const product_id = product_details?.product.id;
-    if (product_details === undefined || product_id === undefined) {
-      this.grocyData.stock = undefined;
-      return;
-    }
+    const product_details = this.grocyData.product_details!;
+    const product_id = product_details.product.id!;
 
-    const getStockPromise = GrocyClient.getStockEntries(product_id);
+    const getStockPromise = super.fetchStockFor(product_id);
 
     const fetchedProductDetails = await GrocyClient.getProductDetails(
       product_id,
@@ -270,7 +290,7 @@ export class ProductState extends State {
     this.progress = 1;
     //await triggerShoppingListUpdate() // makes amount unpredictable if adding same product.
     this.grocyData.shopping_list_items = await fetchShoppingListItems(
-      this.grocyData,
+      this.grocyData.product_details.product.id!,
     );
     this.progress = 50;
 
@@ -292,7 +312,7 @@ export class ProductState extends State {
         this.grocyData.product_details!.product.id!,
       );
     }
-    fetchShoppingListItems(this.grocyData).then((items) =>
+    fetchShoppingListItems(this.grocyData.product_details?.product.id!).then((items) =>
       this.grocyData.shopping_list_items = items
     );
     this.progress = 100;
@@ -300,9 +320,8 @@ export class ProductState extends State {
 }
 
 async function fetchShoppingListItems(
-  product: GrocyData,
+  product_id: number,
 ): Promise<Array<GrocyShoppingListItem>> {
-  const product_id = product.barcode!.product_id;
   let shoppingListItems = await GrocyClient.getShoppingListItems(product_id);
   if (!shoppingListItems) {
     const shoppingLists = await GrocyObjectCache.getObject(
@@ -317,58 +336,6 @@ async function fetchShoppingListItems(
   return shoppingListItems;
 }
 
-export async function fetchGrocyData(
-  pageState: State,
-  barcode: string,
-): Promise<ProductState> {
-  const dbChangePromise = GrocyClient.getLastChangedTimestamp();
-
-  const grocyData: GrocyData = {};
-  // We fetch 'grcy:p:'-Barcodes from product_barcodes_view because only this view provides them.
-  // Other barcodes we fetch directly from product_barcodes because we want the userfields and
-  // they are returned only from there.
-  // (The 'grcy:p:'-Barcodes never have userfields, so no problem there.)
-  const [grocyBarcode, ...grocyExtraBarcodes] = await GrocyClient
-    .getBarcode(barcode);
-  if (grocyBarcode === undefined) {
-    throw `No product with barcode ${barcode} found`;
-  }
-  if (grocyExtraBarcodes.length) {
-    throw `Multiple products with barcode ${barcode} found`;
-  }
-  grocyData.barcode = grocyBarcode;
-  const fetchedShoppingListItemsPromise = fetchShoppingListItems(grocyData);
-  pageState.progress = 25;
-
-  const grocyProductDetails = await GrocyClient.getProductDetails(
-    grocyBarcode.product_id,
-  );
-  grocyData.product_details = grocyProductDetails;
-  const fetchStockPromise = pageState.fetchStock(grocyData);
-  pageState.progress = 50;
-
-  const buildPackagingUnitsPromise = new PackagingUnitsBuilder(
-    grocyBarcode,
-    grocyProductDetails,
-  ).build();
-
-  const fetchedGroup = await GrocyObjectCache.getObject(
-    "product_groups",
-    grocyProductDetails.product?.product_group_id,
-  ) as GrocyProductGroup;
-  grocyData.product_group = fetchedGroup;
-  pageState.progress = 75;
-
-  grocyData.packaging_units =
-    await buildPackagingUnitsPromise as GrocyPackagingUnit[];
-
-  grocyData.shopping_list_items = await fetchedShoppingListItemsPromise;
-
-  await dbChangePromise;
-  await fetchStockPromise;
-  pageState.progress = 100;
-  return new ProductState(grocyData, pageState.progress, pageState.timeout);
-}
 
 /** Triggers adding missing products to shopping list *id*.
  * If *id* is undefined loops through all shopping lists
@@ -445,7 +412,17 @@ export class Page {
     this.state = new WaitingState(this.state.progress, this.state.timeout);
   }
 
-  async toProductState(barcode: string) {
-    this.state = await fetchGrocyData(this.state, barcode);
+  async doBarcode(
+    barcode: string,
+  ) {
+    if (
+      (this.state instanceof ProductState) &&
+      (this.state.grocyData.barcode?.barcode === barcode) &&
+      Number.isFinite(this.state.quantity())
+    ) {
+      return this.state.increaseQuantity();
+    }
+    
+    this.state = new ProductState(await this.state.fetchGrocyData(barcode), this.state.progress, this.state.timeout);
   }
 }

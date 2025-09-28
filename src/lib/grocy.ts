@@ -80,15 +80,15 @@ export type GrocyPackagingUnit = {
   amount_display: string;
 };
 export type GrocyData = {
-  barcode?: GrocyBarcode;
+  barcode: GrocyBarcode;
   /** In increasing order of PackagingUnit.amount
    * with the default consume *Packaging Unit* at index 0.
    */
-  packaging_units?: GrocyPackagingUnit[];
-  product_details?: GrocyProductDetails;
-  product_group?: GrocyProductGroup;
-  stock?: GrocyStockEntry[];
-  shopping_list_items?: GrocyShoppingListItem[];
+  packaging_units: GrocyPackagingUnit[];
+  product_details: GrocyProductDetails;
+  product_group: GrocyProductGroup;
+  stock: GrocyStockEntry[];
+  shopping_list_items: GrocyShoppingListItem[];
   timestamp?: string;
 };
 
