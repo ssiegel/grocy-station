@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <script lang="ts">
     import { formatUnit, formatNumber } from "$lib/format";
     import Stock from "$lib/components/Stock.svelte";
-    import { type ProductState, doConsume } from "$lib/state.svelte";
+    import { type ProductState } from "$lib/state.svelte";
 
     let { productState }: { productState: ProductState } = $props();
     const productData = $derived(productState.grocyData);
@@ -129,7 +129,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     disabled={!productState.consumeValid || productState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Open"
-                    onclick={async () => doConsume(productState, true)}
+                    onclick={async () => productState.doConsume(true)}
                 >
                     <svg inline-src="open" height="1.5em" fill="currentColor" />
                 </button>
@@ -139,7 +139,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     disabled={!productState.consumeValid || productState.progress != 0}
                     class="bg-btn-bg-default hover:bg-btn-bg-hover focus:bg-btn-bg-focus active:bg-btn-bg-active text-btn-fg disabled:text-btn-bg-focus px-4 py-4 h-full rounded"
                     aria-label="Consume"
-                    onclick={async () => doConsume(productState, false)}
+                    onclick={async () => productState.doConsume(false)}
                 >
                     <svg inline-src="consume" height="1.5em" fill="currentColor" />
                 </button>
