@@ -41,7 +41,7 @@ export function setupMqtt(page: Page) {
     }
 
     screenOn(600_000);
-    
+
     try {
       await page.doBarcode(parsed.grocy);
     } catch (e) {

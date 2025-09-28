@@ -99,14 +99,18 @@ export class PackagingUnitsBuilder {
         continue;
       }
       const factor = Number(match[1]) / Number(match[2] ?? 1);
-      pus.push({
-        name: match[3],
-        amount_display: formatNumber(
-          this.barcode.amount * factor,
-          this.barcode.qu_id,
-        ),
-        amount: barcodeAmountStockUnits * factor,
-      });
+      if (factor === 1) {
+        pus[0].name = match[3];
+      } else {
+        pus.push({
+          name: match[3],
+          amount_display: formatNumber(
+            this.barcode.amount * factor,
+            this.barcode.qu_id,
+          ),
+          amount: barcodeAmountStockUnits * factor,
+        });
+      }
     }
     return pus;
   }

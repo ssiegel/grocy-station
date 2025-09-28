@@ -55,14 +55,18 @@ export abstract class State {
     // Other barcodes we fetch directly from product_barcodes because we want the userfields and
     // they are returned only from there.
     // (The 'grcy:p:'-Barcodes never have userfields, so no problem there.)
-    const [grocyBarcode, ...grocyExtraBarcodes] = await GrocyClient.getBarcode(barcode);
+    const [grocyBarcode, ...grocyExtraBarcodes] = await GrocyClient.getBarcode(
+      barcode,
+    );
     if (grocyBarcode === undefined) {
       throw `No product with barcode ${barcode} found`;
     }
     if (grocyExtraBarcodes.length) {
       throw `Multiple products with barcode ${barcode} found`;
     }
-    const fetchShoppingListItemsPromise = fetchShoppingListItems(grocyBarcode.product_id);
+    const fetchShoppingListItemsPromise = fetchShoppingListItems(
+      grocyBarcode.product_id,
+    );
     this.progress = 25;
 
     const grocyProductDetails = await GrocyClient.getProductDetails(
@@ -76,18 +80,20 @@ export abstract class State {
       "product_groups",
       grocyProductDetails.product?.product_group_id,
     );
-    const fetchStockPromise = this.fetchStockFor(grocyProductDetails.product.id!); // TODO: can be fetched earlier?
+    const fetchStockPromise = this.fetchStockFor(
+      grocyProductDetails.product.id!,
+    ); // TODO: can be fetched earlier?
     this.progress = 75;
 
     const grocyData = {
-      barcode: grocyBarcode, 
+      barcode: grocyBarcode,
       packaging_units: await buildPackagingUnitsPromise,
       product_details: grocyProductDetails,
       product_group: await fetchGroupPromise as GrocyProductGroup,
       stock: await fetchStockPromise,
       shopping_list_items: await fetchShoppingListItemsPromise,
       timestamp: await dbChangePromise,
-    }
+    };
     this.progress = 100;
     return grocyData;
   }
@@ -251,9 +257,11 @@ export class ProductState extends State {
     promises.push(this.fetchStock());
     this.progress = 50;
     promises.push(
-      fetchShoppingListItems(this.grocyData.product_details.product.id!).then((items) => {
-        this.grocyData.shopping_list_items = items;
-      }),
+      fetchShoppingListItems(this.grocyData.product_details.product.id!).then(
+        (items) => {
+          this.grocyData.shopping_list_items = items;
+        },
+      ),
     );
     this.progress = 75;
     Promise.all(promises);
@@ -312,9 +320,9 @@ export class ProductState extends State {
         this.grocyData.product_details!.product.id!,
       );
     }
-    fetchShoppingListItems(this.grocyData.product_details?.product.id!).then((items) =>
-      this.grocyData.shopping_list_items = items
-    );
+    fetchShoppingListItems(this.grocyData.product_details?.product.id!).then((
+      items,
+    ) => this.grocyData.shopping_list_items = items);
     this.progress = 100;
   }
 }
@@ -335,7 +343,6 @@ async function fetchShoppingListItems(
   }
   return shoppingListItems;
 }
-
 
 /** Triggers adding missing products to shopping list *id*.
  * If *id* is undefined loops through all shopping lists
@@ -422,7 +429,11 @@ export class Page {
     ) {
       return this.state.increaseQuantity();
     }
-    
-    this.state = new ProductState(await this.state.fetchGrocyData(barcode), this.state.progress, this.state.timeout);
+
+    this.state = new ProductState(
+      await this.state.fetchGrocyData(barcode),
+      this.state.progress,
+      this.state.timeout,
+    );
   }
 }
