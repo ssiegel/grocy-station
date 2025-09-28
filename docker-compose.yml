@@ -17,7 +17,7 @@ services:
       grocy:
         condition: service_healthy
       mosquitto:
-        consition: service_started
+        condition: service_started
 
   grocy:
     image: lscr.io/linuxserver/grocy:4.5.0

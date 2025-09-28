@@ -19,14 +19,16 @@ type GrocyProduct = components["schemas"]["Product"] & {
   due_type: 1 | 2;
 };
 type GrocyUnit = components["schemas"]["QuantityUnit"];
-type GrocyProductDetails = components["schemas"]["ProductDetailsResponse"] & {
-  product: GrocyProduct;
-  product_barcodes: GrocyBarcode[];
-  quantity_unit_stock: GrocyUnit;
-  default_quantity_unit_purchase: GrocyUnit;
-  default_quantity_unit_consume: GrocyUnit;
-  quantity_unit_price: GrocyUnit;
-};
+export type GrocyProductDetails =
+  & components["schemas"]["ProductDetailsResponse"]
+  & {
+    product: GrocyProduct;
+    product_barcodes: GrocyBarcode[];
+    quantity_unit_stock: GrocyUnit;
+    default_quantity_unit_purchase: GrocyUnit;
+    default_quantity_unit_consume: GrocyUnit;
+    quantity_unit_price: GrocyUnit;
+  };
 export type GrocyStockEntry = components["schemas"]["StockEntry"] & {
   /** In GrocyProduct.qu_id_stock units. */
   amount: number;
@@ -39,7 +41,7 @@ type GrocyQUConversion = {
   factor: number;
   //product_id?: number;
 };
-type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
+export type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
   id: number;
   product_id: number;
   barcode: string;
@@ -82,11 +84,11 @@ export type GrocyData = {
   /** In increasing order of PackagingUnit.amount
    * with the default consume *Packaging Unit* at index 0.
    */
-  packaging_units?: Array<GrocyPackagingUnit>;
+  packaging_units?: GrocyPackagingUnit[];
   product_details?: GrocyProductDetails;
   product_group?: GrocyProductGroup;
-  stock?: Array<GrocyStockEntry>;
-  shopping_list_items?: Array<GrocyShoppingListItem>;
+  stock?: GrocyStockEntry[];
+  shopping_list_items?: GrocyShoppingListItem[];
   timestamp?: string;
 };
 
@@ -117,7 +119,7 @@ export class GrocyClient {
 
   public static async getBarcode(
     barcode: string,
-  ): Promise<Array<GrocyBarcode>> {
+  ): Promise<GrocyBarcode[]> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
@@ -130,7 +132,7 @@ export class GrocyClient {
         },
         signal: AbortTimeoutController().signal,
       }),
-    ) as Array<GrocyBarcode>;
+    ) as GrocyBarcode[];
   }
 
   public static async getCacheable(
@@ -170,7 +172,7 @@ export class GrocyClient {
   public static async getQUConversions(
     product_id: number,
     qu_id_stock: number,
-  ): Promise<Array<GrocyQUConversion>> {
+  ): Promise<GrocyQUConversion[]> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
@@ -181,13 +183,13 @@ export class GrocyClient {
         },
         signal: AbortTimeoutController().signal,
       }),
-    ) as Array<GrocyQUConversion>;
+    ) as GrocyQUConversion[];
   }
 
   public static async getShoppingListItems(
     product_id: number,
     shopping_list_id?: number,
-  ): Promise<Array<GrocyShoppingListItem>> {
+  ): Promise<GrocyShoppingListItem[]> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
@@ -200,12 +202,12 @@ export class GrocyClient {
         },
         signal: AbortTimeoutController().signal,
       }),
-    ) as Array<GrocyShoppingListItem>;
+    ) as GrocyShoppingListItem[];
   }
 
   public static async getStockEntries(
     product_id: number,
-  ): Promise<Array<GrocyStockEntry>> {
+  ): Promise<GrocyStockEntry[]> {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/stock/products/{productId}/entries", {
         params: {
@@ -213,7 +215,7 @@ export class GrocyClient {
         },
         signal: AbortTimeoutController().signal,
       }),
-    ) as Array<GrocyStockEntry>;
+    ) as GrocyStockEntry[];
   }
 
   // Post methods

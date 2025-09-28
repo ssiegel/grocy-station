@@ -12,7 +12,7 @@ import {
   type GrocyShoppingList,
   type GrocyShoppingListItem,
 } from "$lib/grocy";
-import { formatNumber } from "./format";
+import { PackagingUnitsBuilder } from "./packaging";
 
 export abstract class State {
   /**
@@ -64,7 +64,6 @@ export abstract class State {
 
     // Trigger recalculation of allotted amounts
     if (this instanceof ProductState) {
-      await Promise.resolve();
       this.reAllot();
     }
   }
@@ -224,15 +223,15 @@ export class ProductState extends State {
 
     const promises: Array<Promise<void>> = [];
     this.grocyData.timestamp = timestamp;
-    this.progress = 1;
+    this.progress = 25;
     promises.push(this.fetchStock());
     this.progress = 50;
     promises.push(
       fetchShoppingListItems(this.grocyData).then((items) => {
         this.grocyData.shopping_list_items = items;
-        return;
       }),
     );
+    this.progress = 75;
     Promise.all(promises);
     this.progress = 100;
   }
@@ -263,9 +262,40 @@ export class ProductState extends State {
 
     // Trigger recalculation of allotted amounts
     if (this instanceof ProductState) {
-      await Promise.resolve();
       this.reAllot();
     }
+  }
+
+  async doShoppingList() {
+    this.progress = 1;
+    //await triggerShoppingListUpdate() // makes amount unpredictable if adding same product.
+    this.grocyData.shopping_list_items = await fetchShoppingListItems(
+      this.grocyData,
+    );
+    this.progress = 50;
+
+    if (this.addShoppingListValid) {
+      const removePromises = [];
+      for (
+        const doneShoppingListItem of this.grocyData.shopping_list_items!
+      ) {
+        removePromises.push(
+          GrocyClient.postRemoveProductShopping(
+            doneShoppingListItem.product_id,
+            doneShoppingListItem.amount,
+          ),
+        );
+      }
+      Promise.all(removePromises);
+      this.progress = 75;
+      GrocyClient.postAddProductShopping(
+        this.grocyData.product_details!.product.id!,
+      );
+    }
+    fetchShoppingListItems(this.grocyData).then((items) =>
+      this.grocyData.shopping_list_items = items
+    );
+    this.progress = 100;
   }
 }
 
@@ -273,12 +303,12 @@ async function fetchShoppingListItems(
   product: GrocyData,
 ): Promise<Array<GrocyShoppingListItem>> {
   const product_id = product.barcode!.product_id;
-  let shoppingListItems = GrocyClient.getShoppingListItems(product_id);
+  let shoppingListItems = await GrocyClient.getShoppingListItems(product_id);
   if (!shoppingListItems) {
     const shoppingLists = await GrocyObjectCache.getObject(
       "shopping_lists",
     ) as Array<GrocyShoppingList>;
-    shoppingListItems = (Promise.all(
+    shoppingListItems = await (Promise.all(
       shoppingLists.filter((shoppingList) => shoppingList.id !== 1).map((
         shoppingList,
       ) => GrocyClient.getShoppingListItems(product_id, shoppingList.id)),
@@ -317,105 +347,10 @@ export async function fetchGrocyData(
   const fetchStockPromise = pageState.fetchStock(grocyData);
   pageState.progress = 50;
 
-  /** Maps *qu_id* to *conversion factor*
-   * between *qu_id quantity units* and *stock quantity units* */
-  const quStockquConversionFactorMap = new Map<number, number>([
-    [
-      grocyProductDetails.product!.qu_id_purchase!,
-      grocyProductDetails.qu_conversion_factor_purchase_to_stock!,
-    ],
-    [
-      grocyProductDetails.product!.qu_id_price!,
-      grocyProductDetails.qu_conversion_factor_price_to_stock!,
-    ],
-    [grocyProductDetails.product!.qu_id_stock!, 1.0],
-  ]);
-  if (
-    [grocyProductDetails.product!.qu_id_consume!, grocyBarcode.qu_id].some((
-      x,
-    ) => x != null && !quStockquConversionFactorMap.has(x))
-  ) {
-    for (
-      const c of await GrocyClient.getQUConversions(
-        grocyProductDetails.product!.id!,
-        grocyProductDetails.product!.qu_id_stock,
-      )
-    ) {
-      quStockquConversionFactorMap.set(c.from_qu_id, c.factor);
-    }
-  }
-  const pus = new Map<number, GrocyPackagingUnit>();
-  let basePuSizeStockUnits: number;
-  // build pu units from barcode
-  if (grocyBarcode.amount != null && grocyBarcode.qu_id != null) {
-    const barcodeAmountStockUnits = grocyBarcode.amount *
-      quStockquConversionFactorMap.get(grocyBarcode.qu_id)!;
-
-    // get pu from barcode qu
-    pus.set(barcodeAmountStockUnits, {
-      name: "Barcode PU",
-      amount_display: formatNumber(
-        grocyBarcode.amount,
-        grocyBarcode.qu_id,
-      ),
-      amount: barcodeAmountStockUnits,
-    });
-
-    // get pu from userfields
-    for (
-      const line of (grocyBarcode.userfields?.packaging_units ?? "").split(
-        /\r?\n/,
-      )
-    ) {
-      const match = line.match(/^(\d+)(?:\/(\d+))?\s+(.*)$/);
-      if (!match) {
-        continue;
-      }
-      const factor = Number(match[1]) / Number(match[2] ?? 1);
-      pus.set(barcodeAmountStockUnits * factor, {
-        name: match[3],
-        amount_display: formatNumber(
-          grocyBarcode.amount * factor,
-          grocyBarcode.qu_id,
-        ),
-        amount: barcodeAmountStockUnits * factor,
-      });
-    }
-    basePuSizeStockUnits = barcodeAmountStockUnits;
-    // build pu units from grocyProductDetails
-  } else {
-    for (
-      const pu of [
-        {
-          name: "Quick C",
-          amount: grocyProductDetails.product.quick_consume_amount,
-        },
-        {
-          name: "Quick O",
-          amount: grocyProductDetails.product.quick_open_amount,
-        },
-      ]
-    ) {
-      if (!pus.has(pu.amount)) {
-        pus.set(pu.amount, {
-          name: pu.name,
-          amount_display: formatNumber(
-            pu.amount /
-              quStockquConversionFactorMap.get(
-                grocyProductDetails.product.qu_id_consume,
-              )!,
-            grocyProductDetails.product.qu_id_consume,
-          ),
-          amount: pu.amount,
-        });
-      }
-    }
-    basePuSizeStockUnits = grocyProductDetails.product!.quick_consume_amount;
-  }
-
-  grocyData.packaging_units = Array.from(pus.entries()).sort(([a], [b]) =>
-    (a === basePuSizeStockUnits ? 0 : a) - (b === basePuSizeStockUnits ? 0 : b)
-  ).map(([, pu]) => pu);
+  const buildPackagingUnitsPromise = new PackagingUnitsBuilder(
+    grocyBarcode,
+    grocyProductDetails,
+  ).build();
 
   const fetchedGroup = await GrocyObjectCache.getObject(
     "product_groups",
@@ -424,12 +359,14 @@ export async function fetchGrocyData(
   grocyData.product_group = fetchedGroup;
   pageState.progress = 75;
 
+  grocyData.packaging_units =
+    await buildPackagingUnitsPromise as GrocyPackagingUnit[];
+
+  grocyData.shopping_list_items = await fetchedShoppingListItemsPromise;
+
   await dbChangePromise;
   await fetchStockPromise;
-  grocyData.shopping_list_items = await fetchedShoppingListItemsPromise;
   pageState.progress = 100;
-  //setTimeout(() => page.progress = 0, 300);
-
   return new ProductState(grocyData, pageState.progress, pageState.timeout);
 }
 
@@ -489,38 +426,6 @@ export async function doConsume(pageState: ProductState, open: boolean) {
 
   await pageState.fetchStock();
   pageState.progress = 100;
-}
-
-export async function doShoppingList(productState: ProductState) {
-  productState.progress = 1;
-  //await triggerShoppingListUpdate() // makes amount unpredictable if adding same product.
-  productState.grocyData.shopping_list_items = await fetchShoppingListItems(
-    productState.grocyData,
-  );
-  productState.progress = 50;
-
-  if (productState.addShoppingListValid) {
-    const removePromises = [];
-    for (
-      const doneShoppingListItem of productState.grocyData.shopping_list_items!
-    ) {
-      removePromises.push(
-        GrocyClient.postRemoveProductShopping(
-          doneShoppingListItem.product_id,
-          doneShoppingListItem.amount,
-        ),
-      );
-    }
-    Promise.all(removePromises);
-    productState.progress = 75;
-    GrocyClient.postAddProductShopping(
-      productState.grocyData.product_details!.product.id!,
-    );
-  }
-  fetchShoppingListItems(productState.grocyData).then((items) =>
-    productState.grocyData.shopping_list_items = items
-  ); // await?
-  productState.progress = 100;
 }
 
 export class Page {
