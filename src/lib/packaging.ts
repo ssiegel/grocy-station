@@ -157,7 +157,7 @@ export class PackagingUnitsBuilder {
     const quStockquConversionFactorMap = await this
       .quStockquConversionFactorMapPromise;
     let pus = this.buildBarcodePackagingUnits(quStockquConversionFactorMap);
-    if (pus === undefined) { // build pu units from grocyProductDetails
+    if (pus === undefined) {
       pus = this.buildProductDetailsPackagingUnits(
         quStockquConversionFactorMap,
       );

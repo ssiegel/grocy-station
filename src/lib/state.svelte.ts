@@ -350,6 +350,7 @@ export class ProductState extends State {
           GrocyClient.postRemoveProductShopping(
             doneShoppingListItem.product_id,
             doneShoppingListItem.amount,
+            doneShoppingListItem.shopping_list_id
           ),
         );
       }
