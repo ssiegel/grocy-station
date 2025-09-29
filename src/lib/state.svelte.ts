@@ -355,7 +355,7 @@ export class ProductState extends State {
       }
       Promise.all(removePromises);
       this.progress = 75;
-      GrocyClient.postAddProductShopping(
+      GrocyClient.postAddToShoppingList(
         this.grocyData.product_details!.product.id!,
       );
     }

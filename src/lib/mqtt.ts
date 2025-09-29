@@ -6,7 +6,7 @@
 import { env } from "$env/dynamic/public";
 import { parseBarcode } from "$lib/barcode";
 import { screenOn } from "$lib/screen";
-import { type Page, ProductState } from "$lib/state.svelte";
+import { type Page } from "$lib/state.svelte";
 
 import mqtt from "mqtt";
 

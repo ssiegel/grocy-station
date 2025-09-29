@@ -15,8 +15,8 @@ class PackagingUnits extends Array<GrocyPackagingUnit> {
       grocyPackagingUnits[basePuIndex ? basePuIndex : 0].amount;
   }
 }
-class QutoStockQuConversionFactorMap extends Map<number, number> {}
 
+type QutoStockQuConversionFactorMap = Map<number, number>;
 export class PackagingUnitsBuilder {
   barcode: GrocyBarcode;
   productDetails: GrocyProductDetails;
@@ -136,7 +136,7 @@ export class PackagingUnitsBuilder {
       );
     }
 
-    let quickPus = quicksimplePus.map(
+    const quickPus = quicksimplePus.map(
       (simplePu) =>
         Object({
           name: simplePu.name,

@@ -255,20 +255,28 @@ export class GrocyClient {
     );
   }
 
-  public static async postAddProductShopping(
+  // This posting method allows for
+  // amount to be unspecified and
+  // it actually be reflected in grocy.
+  // with the endpoint
+  // `/stock/shoppinglist/add-product`
+  // "null" amounts are defaulted to "1".
+  public static async postAddToShoppingList(
     product_id: number,
-    list_id?: number,
+    shopping_list_id?: number,
+    amount?: number,
   ) {
-    return await this.BASE_CLIENT.POST(
-      `/stock/shoppinglist/add-product`,
-      {
-        body: {
-          product_id: product_id,
-          list_id: list_id,
-        },
-        signal: AbortTimeoutController().signal,
+    return await this.BASE_CLIENT.POST(`/objects/{entity}`, {
+      params: {
+        path: { entity: "shopping_list" },
       },
-    );
+      body: {
+        product_id: product_id,
+        shopping_list_id: shopping_list_id,
+        amount: amount,
+      },
+      signal: AbortTimeoutController().signal,
+    });
   }
 
   public static async postRemoveProductShopping(
