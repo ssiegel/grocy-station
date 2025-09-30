@@ -7,7 +7,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <script lang="ts">
     import { pressaction } from "$lib/pressaction.svelte";
     import { formatNumber, formatDate } from "$lib/format";
-    import { GrocyObjectCache, type GrocyStockEntry } from "$lib/grocy";
+    import { GrocyObjectCache } from "$lib/grocy";
+    import type { GrocyStockEntry } from "$lib/types/grocy";
     import { ProductState } from "$lib/state.svelte";
 
     let { productState: productState }: { productState: ProductState } = $props();

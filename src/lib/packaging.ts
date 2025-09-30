@@ -1,9 +1,14 @@
-import {
-  type GrocyBarcode,
-  GrocyClient,
-  type GrocyPackagingUnit,
-  type GrocyProductDetails,
-} from "$lib/grocy";
+// SPDX-FileCopyrightText: © 2025 Stefan Siegel <ssiegel@sdas.net>
+// SPDX-FileCopyrightText: © 2025 Tiago Sanona <tsanona@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { GrocyClient } from "$lib/grocy";
+import type {
+  GrocyBarcode,
+  GrocyPackagingUnit,
+  GrocyProductDetails,
+} from "$lib/types/grocy";
 import { formatNumber } from "./format";
 
 class PackagingUnits extends Array<GrocyPackagingUnit> {

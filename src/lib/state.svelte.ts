@@ -3,15 +3,14 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import {
-  GrocyClient,
-  type GrocyData,
-  GrocyObjectCache,
-  type GrocyProductGroup,
-  type GrocyShoppingList,
-  type GrocyShoppingListItem,
-  type GrocyStockEntry,
-} from "$lib/grocy";
+import { GrocyClient, GrocyObjectCache } from "$lib/grocy";
+import type {
+  GrocyData,
+  GrocyProductGroup,
+  GrocyShoppingList,
+  GrocyShoppingListItem,
+  GrocyStockEntry,
+} from "$lib/types/grocy";
 import { PackagingUnitsBuilder } from "./packaging";
 
 export abstract class State {
@@ -350,7 +349,7 @@ export class ProductState extends State {
           GrocyClient.postRemoveProductShopping(
             doneShoppingListItem.product_id,
             doneShoppingListItem.amount,
-            doneShoppingListItem.shopping_list_id
+            doneShoppingListItem.shopping_list_id,
           ),
         );
       }
