@@ -17,8 +17,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <div
     class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between"
 >
-    <div>{productDetails?.product.name ?? "\u00a0"}</div>
-    {#if productData.product_group?.name}
+    <div>{productDetails.product.name ?? "\u00a0"}</div>
+    {#if productData.product_group.name}
         <div class="text-xl whitespace-nowrap">
             {productData.product_group.name}
         </div>

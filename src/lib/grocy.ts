@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: © 2025 Tiago Sanona <tsanona@gmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import type { paths } from "$lib/types/grocy-api";
+import type { components, paths } from "$lib/types/grocy-api";
 import type {
   GrocyBarcode,
   GrocyErrorReply,
@@ -35,35 +35,34 @@ export class GrocyClient {
 
   // Get Methods
 
-  public static async getBarcode(
-    barcode: string,
-  ): Promise<GrocyBarcode[]> {
-    return this.unwrapOFData(
-      await this.BASE_CLIENT.GET("/objects/{entity}", {
-        params: {
-          path: {
-            entity: barcode.startsWith("grcy:p:")
-              ? "product_barcodes_view"
-              : "product_barcodes",
-          },
-          query: { "query[]": [`barcode=${barcode}`] },
-        },
-        signal: AbortTimeoutController().signal,
-      }),
-    ) as GrocyBarcode[];
-  }
-
-  public static async getCacheable(
-    entity: CacheableEntities,
+  public static async getEntity(
+    entity: components["schemas"]["ExposedEntity_NotIncludingNotListable"],
+    query?: components["parameters"]["query"],
+    limit?: components["parameters"]["limit"],
   ) {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
           path: { entity: entity },
+          query: { "query[]": query },
+          limit: limit,
         },
         signal: AbortTimeoutController().signal,
       }),
     );
+  }
+
+  public static async getBarcode(
+    barcode: string,
+  ): Promise<GrocyBarcode[]> {
+    return await this.getEntity(
+      barcode.startsWith("grcy:p:")
+        ? "product_barcodes_view"
+        : "product_barcodes" as components["schemas"][
+          "ExposedEntity_NotIncludingNotListable"
+        ],
+      [`barcode=${barcode}`],
+    ) as GrocyBarcode[];
   }
 
   public static async getLastChangedTimestamp(): Promise<string | undefined> {
@@ -91,16 +90,9 @@ export class GrocyClient {
     product_id: number,
     qu_id_stock: number,
   ): Promise<GrocyQUConversion[]> {
-    return this.unwrapOFData(
-      await this.BASE_CLIENT.GET("/objects/{entity}", {
-        params: {
-          path: { entity: "quantity_unit_conversions_resolved" },
-          query: {
-            "query[]": [`product_id=${product_id}`, `to_qu_id=${qu_id_stock}`],
-          },
-        },
-        signal: AbortTimeoutController().signal,
-      }),
+    return await this.getEntity(
+      "quantity_unit_conversions_resolved",
+      [`product_id=${product_id}`, `to_qu_id=${qu_id_stock}`],
     ) as GrocyQUConversion[];
   }
 
@@ -108,18 +100,11 @@ export class GrocyClient {
     product_id: number,
     shopping_list_id?: number,
   ): Promise<GrocyShoppingListItem[]> {
-    return this.unwrapOFData(
-      await this.BASE_CLIENT.GET("/objects/{entity}", {
-        params: {
-          path: { entity: "shopping_list" },
-          query: {
-            "query[]": [`product_id=${product_id}`].concat(
-              shopping_list_id ? [`shopping_list_id=${shopping_list_id}`] : [],
-            ),
-          },
-        },
-        signal: AbortTimeoutController().signal,
-      }),
+    return await this.getEntity(
+      "shopping_list",
+      [`product_id=${product_id}`].concat(
+        shopping_list_id ? [`shopping_list_id=${shopping_list_id}`] : [],
+      ),
     ) as GrocyShoppingListItem[];
   }
 
@@ -237,7 +222,7 @@ export class GrocyObjectCache {
     if (!entry.getPromise) {
       entry.getPromise = (async () => {
         try {
-          const data = await GrocyClient.getCacheable(
+          const data = await GrocyClient.getEntity(
             entity,
           );
           entry.cache.clear();
@@ -304,4 +289,32 @@ export class GrocyObjectCache {
     }
     return GrocyObjectCache.caches.get(entity)?.cache.get(id);
   }
+}
+
+export async function fetchProductStock(
+  productId: number,
+): Promise<GrocyStockEntry[]> {
+  const fetchedStock = await GrocyClient.getStockEntries(productId);
+  for (const entry of fetchedStock) {
+    entry.amount_allotted = 0;
+  }
+  return fetchedStock;
+}
+
+
+export async function fetchProductShoppingListItems(
+  productId: number,
+): Promise<GrocyShoppingListItem[]> {
+  let shoppingListItems = await GrocyClient.getShoppingListItems(productId);
+  if (!shoppingListItems) {
+    const shoppingLists = await GrocyObjectCache.getObject(
+      "shopping_lists",
+    ) as GrocyShoppingListItem[];
+    shoppingListItems = await (Promise.all(
+      shoppingLists.filter((shoppingList) => shoppingList.id !== 1).map((
+        shoppingList,
+      ) => GrocyClient.getShoppingListItems(productId, shoppingList.id)),
+    )).then((lists) => lists.flat());
+  }
+  return shoppingListItems;
 }

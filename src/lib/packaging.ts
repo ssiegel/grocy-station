@@ -42,27 +42,28 @@ export class PackagingUnitsBuilder {
   private async buildQuStockquConversionFactorMap(): Promise<
     QutoStockQuConversionFactorMap
   > {
+    const product = this.productDetails.product;
     const quStockquConversionFactorMap = new Map<number, number>([
       [
-        this.productDetails.product!.qu_id_purchase!,
+        product.qu_id_purchase,
         this.productDetails.qu_conversion_factor_purchase_to_stock!,
       ],
       [
-        this.productDetails.product!.qu_id_price!,
+        product.qu_id_price,
         this.productDetails.qu_conversion_factor_price_to_stock!,
       ],
-      [this.productDetails.product!.qu_id_stock!, 1.0],
+      [product.qu_id_stock, 1.0],
     ]);
 
     if (
-      [this.productDetails.product!.qu_id_consume!, this.barcode.qu_id].some((
+      [product.qu_id_consume, this.barcode.qu_id].some((
         x,
       ) => x != null && !quStockquConversionFactorMap.has(x))
     ) {
       for (
         const c of await GrocyClient.getQUConversions(
-          this.productDetails.product!.id!,
-          this.productDetails.product!.qu_id_stock,
+          product.id!,
+          product.qu_id_stock,
         )
       ) {
         quStockquConversionFactorMap.set(c.from_qu_id, c.factor);

@@ -24,7 +24,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.5",
-    "svelte": "^5.0.0",
+    "svelte": "^5.36.0",
     "svelte-check": "^4.0.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.0.0",

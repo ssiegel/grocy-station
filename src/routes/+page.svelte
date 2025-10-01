@@ -45,7 +45,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         GrocyObjectCache.getObject("locations");
         GrocyObjectCache.getObject("quantity_units");
         GrocyObjectCache.getObject("product_groups");
-        GrocyObjectCache.getObject("shopping_lists")
 
         setupMqtt(page);
 
