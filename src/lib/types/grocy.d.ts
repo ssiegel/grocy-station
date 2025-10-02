@@ -33,6 +33,11 @@ export type GrocyStockEntry = components["schemas"]["StockEntry"] & {
   amount: number;
   amount_allotted: number;
 };
+
+export type GrocyStockLogEntry = components["schemas"]["StockLogEntry"] & {
+  amount: number;
+  product_id: number;
+};
 type GrocyQUConversion = {
   id: number;
   from_qu_id: number;
@@ -87,6 +92,7 @@ export type GrocyData = {
   product_details: GrocyProductDetails;
   product_group: GrocyProductGroup;
   stock: GrocyStockEntry[];
+  stock_log: GrocyStockLogEntry[];
   shopping_list_items: GrocyShoppingListItem[];
   timestamp?: string;
 };

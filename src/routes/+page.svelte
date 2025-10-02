@@ -59,6 +59,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 <div class="text-2xl flex flex-col gap-2 items-stretch min-h-screen">
+    <!-- progressbar: the if makes reset (aka 100 => 0) transition more natural. -->
     {#if pageState.progress}
         <div class="fixed top-0 left-0 w-full h-[2px] z-50 pointer-events-none">
             <div
@@ -80,7 +81,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             {pageState.message}
         </div>
     {:else if pageState instanceof ProductState}
-        <ProductStock productState={pageState} />
+        <ProductStock {pageState} />
     {/if}
 </div>
 

@@ -11,6 +11,7 @@ import type {
   GrocyQUConversion,
   GrocyShoppingListItem,
   GrocyStockEntry,
+  GrocyStockLogEntry,
 } from "$lib/types/grocy";
 import createClient from "openapi-fetch";
 
@@ -137,27 +138,6 @@ export class GrocyClient {
     );
   }
 
-  public static async postConsume(
-    product_id: number,
-    stock_id: string,
-    amount_allotted: number,
-    open: boolean,
-  ) {
-    return await this.BASE_CLIENT.POST(
-      `/stock/products/{productId}/${open ? "open" : "consume"}`,
-      {
-        params: {
-          path: { productId: product_id },
-        },
-        body: {
-          amount: amount_allotted,
-          stock_entry_id: stock_id,
-        },
-        signal: AbortTimeoutController().signal,
-      },
-    );
-  }
-
   // This posting method allows for
   // amount to be unspecified and
   // it actually be reflected in grocy.
@@ -182,6 +162,27 @@ export class GrocyClient {
     });
   }
 
+  public static async postConsume(
+    product_id: number,
+    stock_id: string,
+    amount_allotted: number,
+    open: boolean,
+  ) {
+    return await this.BASE_CLIENT.POST(
+      `/stock/products/{productId}/${open ? "open" : "consume"}`,
+      {
+        params: {
+          path: { productId: product_id },
+        },
+        body: {
+          amount: amount_allotted,
+          stock_entry_id: stock_id,
+        },
+        signal: AbortTimeoutController().signal,
+      },
+    );
+  }
+
   public static async postRemoveProductShopping(
     product_id: number,
     product_amount: number,
@@ -194,6 +195,20 @@ export class GrocyClient {
           product_id: product_id,
           list_id: list_id,
           product_amount: product_amount,
+        },
+        signal: AbortTimeoutController().signal,
+      },
+    );
+  }
+
+  public static async postRemoveBooking(
+    booking_id: number,
+  ) {
+    return await this.BASE_CLIENT.POST(
+      `/stock/bookings/{bookingId}/undo`,
+      {
+        params: {
+          path: { bookingId: booking_id },
         },
         signal: AbortTimeoutController().signal,
       },
@@ -301,6 +316,14 @@ export async function fetchProductStock(
   return fetchedStock;
 }
 
+export async function fetchProductStockLogs(
+  productId: number,
+): Promise<GrocyStockLogEntry[]> {
+  return await GrocyClient.getEntity("stock_log", [
+    `product_id=${productId}`,
+    `undone=0`,
+  ], 5) as GrocyStockLogEntry[];
+}
 
 export async function fetchProductShoppingListItems(
   productId: number,

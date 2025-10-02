@@ -6,6 +6,7 @@
 import {
   fetchProductShoppingListItems,
   fetchProductStock,
+  fetchProductStockLogs,
   GrocyClient,
   GrocyObjectCache,
 } from "$lib/grocy";
@@ -57,6 +58,7 @@ export abstract class State {
     const fetchStockPromise = fetchProductStock(
       productId,
     );
+    const fetchStockLogPromise = fetchProductStockLogs(productId);
     const fetchShoppingListItemsPromise = fetchProductShoppingListItems(
       productId,
     );
@@ -79,6 +81,7 @@ export abstract class State {
       product_details: grocyProductDetails,
       product_group: await fetchGroupPromise as GrocyProductGroup,
       stock: await fetchStockPromise,
+      stock_log: await fetchStockLogPromise,
       shopping_list_items: await fetchShoppingListItemsPromise,
       timestamp: await dbChangePromise,
     };
@@ -159,6 +162,8 @@ export class ProductState extends State {
   public readonly addShoppingListValid: boolean;
   /** *Statefull* */
   selectedStockEntryIndex: number = $state(0);
+  /** *Statefull* */
+  selectedStockLogEntryIndex = $state(undefined as number | undefined);
 
   constructor(
     grocyData: GrocyData,
@@ -233,6 +238,12 @@ export class ProductState extends State {
     }
   }
 
+  async updateStockLogs() {
+    this.grocyData.stock_log = await fetchProductStockLogs(
+      this.productId,
+    );
+  }
+
   async updateShoppingListItems() {
     this.grocyData.shopping_list_items = await fetchProductShoppingListItems(
       this.productId,
@@ -253,6 +264,7 @@ export class ProductState extends State {
 
     const promises: Promise<void>[] = [];
     promises.push(this.updateStock());
+    promises.push(this.updateStockLogs());
     this.progress = 50;
     promises.push(this.updateShoppingListItems());
     this.progress = 75;
@@ -331,6 +343,7 @@ export class ProductState extends State {
     triggerShoppingListUpdate();
 
     await this.updateStock();
+    await this.updateStockLogs();
     this.progress = 100;
   }
 
@@ -359,11 +372,19 @@ export class ProductState extends State {
         this.productId,
       );
     }
-    await this.updateShoppingListItems(); // TODO: should await?
+    await this.updateShoppingListItems();
     this.progress = 100;
   }
 
-  async doUndo() {}
+  async doUndo() {
+    this.progress = 1;
+    let booking_id = this.grocyData.stock_log.splice(
+      this.selectedStockLogEntryIndex!,
+      1,
+    )[0].id!;
+    await GrocyClient.postRemoveBooking(booking_id);
+    this.progress = 100;
+  }
 }
 
 /** Triggers adding missing products to shopping list *id*.
