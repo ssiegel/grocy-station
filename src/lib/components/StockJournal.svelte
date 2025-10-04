@@ -8,7 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { formatDate, formatNumber } from "$lib/format";
     import { pressaction } from "$lib/pressaction.svelte";
     import type { ProductState } from "$lib/state.svelte";
-    import WhiteButton from './WhiteButton.svelte';
+    import WhiteButton from '$lib/components/WhiteButton.svelte';
 
     let { productState: productState }: { productState: ProductState } = $props();
 

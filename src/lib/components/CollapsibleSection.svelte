@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import WhiteButton from "./WhiteButton.svelte";
+    import WhiteButton from "$lib/components/WhiteButton.svelte";
 
     interface Props {
         header: string;

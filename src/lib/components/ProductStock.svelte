@@ -9,7 +9,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { type ProductState } from "$lib/state.svelte";
     import Stock from "$lib/components/Stock.svelte";
     import StockJournal from "$lib/components/StockJournal.svelte";
-    import WhiteButton from "./WhiteButton.svelte";
+    import WhiteButton from "$lib/components/WhiteButton.svelte";
 
     let { pageState: productState }: { pageState: ProductState } = $props();
     const productData = $derived(productState.grocyData);

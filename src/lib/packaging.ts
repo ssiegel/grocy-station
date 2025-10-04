@@ -9,7 +9,7 @@ import type {
   GrocyPackagingUnit,
   GrocyProductDetails,
 } from "$lib/types/grocy";
-import { formatNumber } from "./format";
+import { formatNumber } from "$lib/format";
 
 class PackagingUnits extends Array<GrocyPackagingUnit> {
   basePuSizeStockUnits: number;

@@ -11,7 +11,7 @@ import {
   GrocyObjectCache,
 } from "$lib/grocy";
 import type { GrocyData, GrocyProductGroup } from "$lib/types/grocy";
-import { PackagingUnitsBuilder } from "./packaging";
+import { PackagingUnitsBuilder } from "$lib/packaging";
 
 export abstract class State {
   /**
