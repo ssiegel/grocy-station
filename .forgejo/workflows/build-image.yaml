@@ -1,0 +1,100 @@
+on: [ push ]
+
+env:
+  image: harbor.homelab.sdas.net/library/grocy-station
+  registry_user: stefan
+
+jobs:
+  build-amd64:
+    runs-on: [ docker, amd64 ]
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+      env:
+        arch: amd64
+    outputs:
+      cache: ${{ steps.cache.outputs.cache-from }}
+    steps: &build_steps
+      - name: Configure Docker Build Cache
+        id: cache
+        uses: int128/docker-build-cache-config-action@v1
+        with:
+          image: ${{ env.image }}
+          flavor: prefix=buildcache-${{ env.arch }}-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.image }}
+          username: ${{ env.registry_user }}
+          password: ${{ secrets.registry_token }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/${{ env.arch }}
+          context: "{{defaultContext}}:."
+          file: ./Dockerfile
+          provenance: false
+          sbom: false
+          cache-from: ${{ steps.cache.outputs.cache-from }}
+          cache-to: ${{ steps.cache.outputs.cache-to }}
+          outputs: type=cacheonly
+
+  build-arm64:
+    runs-on: [ docker, arm64 ]
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+      env:
+        arch: arm64
+    outputs:
+      cache: ${{ steps.cache.outputs.cache-from }}
+    steps: *build_steps
+
+  build-manifest:
+    needs: [ build-amd64, build-arm64 ]
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+
+    steps:
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.image }}
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=ref,event=branch
+          type=ref,event=tag
+          type=ref,event=pr
+          type=sha
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.image }}
+        username: ${{ env.registry_user }}
+        password: ${{ secrets.registry_token }}
+
+    - name: Build and push
+      id: build
+      uses: docker/build-push-action@v6
+      with:
+        platforms: linux/amd64,linux/arm64
+        context: "{{defaultContext}}:."
+        file: ./Dockerfile
+        provenance: false
+        sbom: false
+        cache-from: |
+          ${{ needs.build-amd64.outputs.cache }}
+          ${{ needs.build-arm64.outputs.cache }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
