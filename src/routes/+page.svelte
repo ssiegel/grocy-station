@@ -12,6 +12,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     } from "$lib/grocy";
     import { ErrorState, MessageState, ProductState, Page} from "$lib/state.svelte";
     import ProductStock from "$lib/components/ProductStock.svelte";
+    import { startAutoReload, stopAutoReload } from "$lib/auto-reload";
 
     let currentTime = $state(Date.now());
     let updateClockTimer: ReturnType<typeof setTimeout>;
@@ -59,11 +60,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         pageState.progress = 100
         //setTimeout(() => page.progress = 0, 300);
         setTimeout(updateClock, 0);
+        startAutoReload();
         page.toWaitingState();
     });
 
     onDestroy(() => {
         clearTimeout(updateClockTimer);
+        stopAutoReload();
         disconnectMqtt(page);
     });
 </script>
@@ -108,6 +111,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     {:else if pageState instanceof ProductState}
         <ProductStock productState={pageState} />
     {/if}
+</div>
+
+<div class="text-label-fg fixed bottom-1 right-2 text-xs opacity-30 pointer-events-none select-none">
+    v{__APP_VERSION__}
 </div>
 
 <style>

@@ -58,6 +58,8 @@ jobs:
         platforms: linux/amd64,linux/arm64
         context: "{{defaultContext}}:."
         file: ./Dockerfile
+        build-args: |
+          GIT_HEAD=${{ github.sha }}
         provenance: false
         sbom: false
         cache-from: ${{ steps.cache.outputs.cache-from }}
