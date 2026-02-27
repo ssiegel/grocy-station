@@ -12,14 +12,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     } from "$lib/grocy";
     import { ErrorState, MessageState, ProductState, Page} from "$lib/state.svelte";
     import ProductStock from "$lib/components/ProductStock.svelte";
+    import Clock from "$lib/components/Clock.svelte";
     import { startAutoReload, stopAutoReload } from "$lib/auto-reload";
-
-    let currentTime = $state(Date.now());
-    let updateClockTimer: ReturnType<typeof setTimeout>;
-    function updateClock() {
-        currentTime = Date.now();
-        updateClockTimer = setTimeout(updateClock, 1000 - (currentTime % 1000));
-    }
 
     (globalThis as any).reEnableScreen = () => {
         screenOn(3000);
@@ -59,13 +53,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
         pageState.progress = 100
         //setTimeout(() => page.progress = 0, 300);
-        setTimeout(updateClock, 0);
         startAutoReload();
         page.toWaitingState();
     });
 
     onDestroy(() => {
-        clearTimeout(updateClockTimer);
         stopAutoReload();
         disconnectMqtt(page);
     });
@@ -84,18 +76,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between"
     >
         <div>Grocy Station</div>
-        <div class="text-xl">
-            {(new Date(currentTime + 500)).toLocaleString("en-CA", {
-                weekday: "long",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                hour12: false,
-                minute: "2-digit",
-                second: "2-digit",
-            }).replaceAll(", ", "\u2002")}
-        </div>
+        <Clock class="text-xl" />
     </div>
 
     {#if pageState instanceof ErrorState}
