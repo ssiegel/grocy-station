@@ -20,7 +20,7 @@ services:
         condition: service_started
 
   grocy:
-    image: lscr.io/linuxserver/grocy:4.5.0
+    image: lscr.io/linuxserver/grocy:4.6.0-ls317
     entrypoint: /bin/sh -c "sed -i -re s/production/demo/ /app/www/config-dist.php && exec /init"
     ports:
       - 8081:80
