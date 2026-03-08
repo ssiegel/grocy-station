@@ -24,6 +24,8 @@ services:
     entrypoint: /bin/sh -c "sed -i -re s/production/demo/ /app/www/config-dist.php && exec /init"
     ports:
       - 8081:80
+    tmpfs:
+      - /config
     healthcheck:
       test: [
         "CMD-SHELL",
@@ -39,3 +41,6 @@ services:
     ports:
       - 1883:1883
       - 8082:8082
+    tmpfs:
+      - /mosquitto/data
+      - /mosquitto/log
