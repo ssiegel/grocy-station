@@ -39,14 +39,14 @@ export class GrocyClient {
   public static async getEntity(
     entity: components["schemas"]["ExposedEntity_NotIncludingNotListable"],
     query?: components["parameters"]["query"],
+    order?: components["parameters"]["order"],
     limit?: components["parameters"]["limit"],
   ) {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
           path: { entity: entity },
-          query: { "query[]": query },
-          limit: limit,
+          query: { "query[]": query, order: order, limit: limit },
         },
         signal: AbortTimeoutController().signal,
       }),
@@ -319,10 +319,13 @@ export async function fetchProductStock(
 export async function fetchProductStockLogs(
   productId: number,
 ): Promise<GrocyStockLogEntry[]> {
+  const STOCK_LOG_LIMIT = 7 * 24 * 60 * 60 * 1000;
+  const timestampLimit = new Date(Date.now() -  STOCK_LOG_LIMIT).toISOString();
   return await GrocyClient.getEntity("stock_log", [
     `product_id=${productId}`,
     `undone=0`,
-  ], 5) as GrocyStockLogEntry[];
+    `row_created_timestamp>=${timestampLimit}`
+  ], "row_created_timestamp:desc") as GrocyStockLogEntry[];
 }
 
 export async function fetchProductShoppingListItems(
