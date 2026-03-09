@@ -340,10 +340,9 @@ export class ProductState extends State {
       ),
     );
 
-    triggerShoppingListUpdate();
+    await triggerShoppingListUpdate();
 
-    await this.updateStock();
-    await this.updateStockLogs();
+    await this.fetchDbChanged();
     this.progress = 100;
   }
 
