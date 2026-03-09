@@ -1,6 +1,6 @@
 name: Build Container Image
 
-on: [ push, pull_request ]
+on: [ push ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.head_ref }}
