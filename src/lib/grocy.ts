@@ -319,10 +319,13 @@ export async function fetchProductStock(
 export async function fetchProductStockLogs(
   productId: number,
 ): Promise<GrocyStockLogEntry[]> {
+  const STOCK_LOG_LIMIT = 7 * 24 * 60 * 60 * 1000;
+  const timestampLimit = new Date(Date.now() -  STOCK_LOG_LIMIT).toISOString();
   return await GrocyClient.getEntity("stock_log", [
     `product_id=${productId}`,
     `undone=0`,
-  ], 5) as GrocyStockLogEntry[];
+    `row_created_timestamp>=${timestampLimit}`
+  ]) as GrocyStockLogEntry[];
 }
 
 export async function fetchProductShoppingListItems(
