@@ -39,14 +39,14 @@ export class GrocyClient {
   public static async getEntity(
     entity: components["schemas"]["ExposedEntity_NotIncludingNotListable"],
     query?: components["parameters"]["query"],
+    order?: components["parameters"]["order"],
     limit?: components["parameters"]["limit"],
   ) {
     return this.unwrapOFData(
       await this.BASE_CLIENT.GET("/objects/{entity}", {
         params: {
           path: { entity: entity },
-          query: { "query[]": query },
-          limit: limit,
+          query: { "query[]": query, order: order, limit: limit },
         },
         signal: AbortTimeoutController().signal,
       }),
@@ -325,7 +325,7 @@ export async function fetchProductStockLogs(
     `product_id=${productId}`,
     `undone=0`,
     `row_created_timestamp>=${timestampLimit}`
-  ]) as GrocyStockLogEntry[];
+  ], "row_created_timestamp:desc") as GrocyStockLogEntry[];
 }
 
 export async function fetchProductShoppingListItems(
