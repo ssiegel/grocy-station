@@ -16,6 +16,12 @@ import type { RequestHandler } from "./$types";
 export const GET: RequestHandler = () => {
     const encoder = new TextEncoder();
     let unlisten: (() => void) | undefined;
+    let keepalive: ReturnType<typeof setInterval> | undefined;
+
+    // SSE comment lines (starting with ':') are ignored by EventSource clients
+    // but keep the TCP connection alive through reverse proxies that would
+    // otherwise close idle connections.
+    const KEEPALIVE_INTERVAL_MS = 30_000;
 
     const stream = new ReadableStream({
         start(controller) {
@@ -26,8 +32,13 @@ export const GET: RequestHandler = () => {
                     ),
                 );
             });
+
+            keepalive = setInterval(() => {
+                controller.enqueue(encoder.encode(": keepalive\n\n"));
+            }, KEEPALIVE_INTERVAL_MS);
         },
         cancel() {
+            clearInterval(keepalive);
             unlisten?.();
         },
     });

@@ -7,7 +7,7 @@
  *
  * Maintains a single SSE connection to Grocy's built-in Mercure hub and
  * fans out `db-changed` notifications to registered listeners.
- * Handles JWT token refresh (we reconnect 5 minutes before expiry).
+ * Handles JWT token refresh (we reconnect 2 minutes before expiry).
  */
 
 import { env } from "$env/dynamic/private";
@@ -38,6 +38,7 @@ function stopFallbackPolling() {
     if (!pollInterval) return;
     clearInterval(pollInterval);
     pollInterval = undefined;
+    void pollDbChanged(); // Final poll to catch any changes before SSE connection was restored.
     console.log("Mercure: stopped fallback polling.");
 }
 
@@ -85,17 +86,36 @@ async function connect(): Promise<void> {
     try {
         const { token, exp } = await fetchSubscriberToken();
 
+        // Schedule token refresh: reconnect 2 minutes before expiry,
+        // but no later than in 7.5 minutes and no sooner than in 1 minute.
+        clearTimeout(refreshTimeout);
+        const refreshInSeconds = Math.min(450, Math.max(60,
+            (exp - Math.floor(Date.now() / 1000) - 120)
+        ));
+        refreshTimeout = setTimeout(() => void connect(), refreshInSeconds * 1000);
+
         const url = new URL("/.well-known/mercure", env.GROCY_BASE_URL);
         url.searchParams.set("topic", "grocy/db-changed");
         url.searchParams.set("authorization", token);
 
-        if (eventSource) {
-            eventSource.close();
-        }
+        const newEventSource = new EventSource(url.toString());
 
-        eventSource = new EventSource(url.toString());
+        newEventSource.onopen = () => {
+            // New connection is confirmed alive, stop any fallback polling and close the old connection.
+            stopFallbackPolling();
+            if (eventSource) {
+                eventSource.onmessage = null;
+                eventSource.onerror = null;
+                eventSource.close();
+            } else {
+                console.log(
+                    `Mercure: SSE connection established (token refresh in ${refreshInSeconds}s)`,
+                );
+            }
+            eventSource = newEventSource;
+        };
 
-        eventSource.onmessage = (event: MessageEvent) => {
+        newEventSource.onmessage = (event: MessageEvent) => {
             try {
                 const { changed_time } = JSON.parse(event.data as string) as {
                     changed_time: string;
@@ -105,7 +125,6 @@ async function connect(): Promise<void> {
                 // We wait DEBOUNCE_MS after the *last* event before notifying listeners.
                 clearTimeout(debounceTimeout);
                 debounceTimeout = setTimeout(() => {
-                    stopFallbackPolling();
                     lastKnownChangedTime = changed_time;
                     notifyListeners(changed_time);
                 }, DEBOUNCE_MS);
@@ -114,28 +133,18 @@ async function connect(): Promise<void> {
             }
         };
 
-        eventSource.onerror = () => {
-            console.warn("Mercure: SSE connection error, reconnecting in 5s…");
-            if (eventSource) {
-                eventSource.close();
+        newEventSource.onerror = () => {
+            console.warn("Mercure: SSE connection error, reconnecting in 5s...");
+            newEventSource.onmessage = null;
+            newEventSource.onerror = null;
+            newEventSource.close();
+            if (eventSource === newEventSource) {
                 eventSource = null;
             }
             startFallbackPolling();
             clearTimeout(refreshTimeout);
             refreshTimeout = setTimeout(() => void connect(), 5_000);
         };
-
-        // Schedule token refresh: reconnect 5 minutes before expiry
-        clearTimeout(refreshTimeout);
-        const refreshInMs = Math.max(
-            (exp - Math.floor(Date.now() / 1000) - 300) * 1000,
-            60_000,
-        );
-        refreshTimeout = setTimeout(() => void connect(), refreshInMs);
-
-        console.log(
-            `Mercure: SSE connection established (token refresh in ${Math.round(refreshInMs / 1000)} s)`,
-        );
     } catch (e) {
         console.error("Mercure: failed to connect:", e);
         startFallbackPolling();
