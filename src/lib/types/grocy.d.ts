@@ -94,7 +94,6 @@ export type GrocyData = {
   stock: GrocyStockEntry[];
   stock_log: GrocyStockLogEntry[];
   shopping_list_items: GrocyShoppingListItem[];
-  timestamp?: string;
 };
 
 type GrocyErrorReply =

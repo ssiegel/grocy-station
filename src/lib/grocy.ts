@@ -66,14 +66,6 @@ export class GrocyClient {
     ) as GrocyBarcode[];
   }
 
-  public static async getLastChangedTimestamp(): Promise<string | undefined> {
-    return this.unwrapOFData(
-      await this.BASE_CLIENT.GET("/system/db-changed-time", {
-        signal: AbortTimeoutController().signal,
-      }),
-    ).changed_time;
-  }
-
   public static async getProductDetails(
     product_id: number,
   ): Promise<GrocyProductDetails> {

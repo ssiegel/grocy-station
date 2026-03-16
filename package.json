@@ -33,6 +33,7 @@
   "dependencies": {
     "@point-of-sale/barcode-parser": "^1.0.4",
     "@svelte-put/inline-svg": "^4.0.2",
+    "eventsource": "^4.1.0",
     "mqtt": "^5.15.0",
     "openapi-fetch": "^0.17.0"
   }

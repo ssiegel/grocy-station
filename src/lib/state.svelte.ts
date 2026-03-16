@@ -36,8 +36,6 @@ export abstract class State {
   async fetchGrocyData(
     barcode: string,
   ): Promise<GrocyData> {
-    const dbChangePromise = GrocyClient.getLastChangedTimestamp();
-
     // We fetch 'grcy:p:'-Barcodes from product_barcodes_view because only this view provides them.
     // Other barcodes we fetch directly from product_barcodes because we want the userfields and
     // they are returned only from there.
@@ -83,7 +81,6 @@ export abstract class State {
       stock: await fetchStockPromise,
       stock_log: await fetchStockLogPromise,
       shopping_list_items: await fetchShoppingListItemsPromise,
-      timestamp: await dbChangePromise,
     };
     this.progress = 100;
     return grocyData;
@@ -127,8 +124,6 @@ export class WaitingState extends MessageState {
     super(WaitingState.MESSAGE, progress, state_timeout);
   }
 }
-
-const GROCY_POLL_INTERVAL_MS = 15_000;
 
 export class ProductState extends State {
   /** *Statefull* */
@@ -185,7 +180,6 @@ export class ProductState extends State {
       this.grocyData.shopping_list_items.filter((list) => !list.done)
         .length === 0,
     );
-    setInterval(() => this.fetchDbChanged(), GROCY_POLL_INTERVAL_MS);
   }
 
   /** Returns currents state of ProductState.inputQuantity as numeric. */
@@ -250,16 +244,10 @@ export class ProductState extends State {
     );
   }
 
-  async fetchDbChanged() {
-    const timestamp = await GrocyClient.getLastChangedTimestamp();
-    if (
-      timestamp === undefined ||
-      timestamp === this.grocyData.timestamp ||
-      this.progress !== 0
-    ) {
+  async onDbChanged() {
+    if (this.progress !== 0) {
       return;
     }
-    this.grocyData.timestamp = timestamp;
     this.progress = 25;
 
     const promises: Promise<void>[] = [];

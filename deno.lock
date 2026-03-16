@@ -10,6 +10,7 @@
     "npm:@tailwindcss/postcss@^4.2.1": "4.2.1",
     "npm:@tailwindcss/typography@~0.5.19": "0.5.19_tailwindcss@4.2.1",
     "npm:autoprefixer@^10.4.27": "10.4.27_postcss@8.5.6",
+    "npm:eventsource@^4.1.0": "4.1.0",
     "npm:mqtt@^5.15.0": "5.15.0",
     "npm:openapi-fetch@0.17": "0.17.0",
     "npm:postcss@^8.5.6": "8.5.6",
@@ -947,6 +948,15 @@
     "events@3.3.0": {
       "integrity": "sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q=="
     },
+    "eventsource-parser@3.0.6": {
+      "integrity": "sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg=="
+    },
+    "eventsource@4.1.0": {
+      "integrity": "sha512-2GuF51iuHX6A9xdTccMTsNb7VO0lHZihApxhvQzJB5A03DvHDd2FQepodbMaztPBmBcE/ox7o2gqaxGhYB9LhQ==",
+      "dependencies": [
+        "eventsource-parser"
+      ]
+    },
     "fast-unique-numbers@9.0.26": {
       "integrity": "sha512-3Mtq8p1zQinjGyWfKeuBunbuFoixG72AUkk4VvzbX4ykCW9Q4FzRaNyIlfQhUjnKw2ARVP+/CKnoyr6wfHftig==",
       "dependencies": [
@@ -1687,6 +1697,7 @@
         "npm:@tailwindcss/postcss@^4.2.1",
         "npm:@tailwindcss/typography@~0.5.19",
         "npm:autoprefixer@^10.4.27",
+        "npm:eventsource@^4.1.0",
         "npm:mqtt@^5.15.0",
         "npm:openapi-fetch@0.17",
         "npm:postcss@^8.5.6",

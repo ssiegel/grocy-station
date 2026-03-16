@@ -84,6 +84,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/system/mercure-auth": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Returns a short-lived JWT for subscribing to the Mercure hub
+     * @description Returns a signed JWT that can be used to authenticate as a subscriber to the built-in Mercure hub at /.well-known/mercure
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description A MercureAuthResponse object */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["MercureAuthResponse"];
+          };
+        };
+        /** @description Mercure subscriber JWT key is not configured */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Error500"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/system/config": {
     parameters: {
       query?: never;
@@ -5071,6 +5119,10 @@ export interface components {
     DbChangedTimeResponse: {
       /** Format: date-time */
       changed_time?: string;
+    };
+    MercureAuthResponse: {
+      /** @description A signed JWT for authenticating as a subscriber to the Mercure hub */
+      token?: string;
     };
     TimeResponse: {
       timezone?: string;

@@ -6,6 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <script lang="ts">
     import { onMount, onDestroy, untrack } from "svelte";
     import { setupMqtt, disconnectMqtt } from "$lib/mqtt";
+    import { setupDbEvents, disconnectDbEvents } from "$lib/db-events";
     import { screenOn } from "$lib/screen";
     import {
         GrocyObjectCache,
@@ -49,6 +50,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         GrocyObjectCache.getObject("product_groups");
 
         setupMqtt(page);
+        setupDbEvents(page);
 
         pageState.progress = 100
         //setTimeout(() => page.progress = 0, 300);
@@ -58,6 +60,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
     onDestroy(() => {
         stopAutoReload();
+        disconnectDbEvents();
         disconnectMqtt(page);
     });
 </script>
