@@ -8,20 +8,21 @@ import { env } from "$env/dynamic/private";
 
 const GROCY_PROXY_PATH = "/api/grocy";
 
+// Require requests to /api/* to originate from the same origin, to prevent
+// 3rd party sites from using this server as a proxy or event relay.
+const isSameOrigin = (event: Parameters<Handle>[0]["event"]): boolean => {
+  const origin = event.request.headers.get("origin");
+  const referer = event.request.headers.get("referer");
+  return !!(
+    (origin && new URL(origin).origin === event.url.origin) ||
+    (referer && new URL(referer).origin === event.url.origin)
+  );
+};
+
 const handleGrocyApiProxy: Handle = async ({ event }) => {
   if (env.GROCY_BASE_URL === undefined) {
     console.error("Grocy not configured.");
     throw error(500, "Grocy not configured.");
-  }
-
-  // try to prevent 3rd party requests to the proxy
-  const origin = event.request.headers.get("origin");
-  const referer = event.request.headers.get("referer");
-  if (
-    !(origin && new URL(origin).origin === event.url.origin ||
-      referer && new URL(referer).origin === event.url.origin)
-  ) {
-    throw error(403, "Forbidden");
   }
 
   return await fetch(
@@ -47,6 +48,10 @@ const handleGrocyApiProxy: Handle = async ({ event }) => {
 };
 
 export const handle: Handle = async ({ event, resolve }) => {
+  if (event.url.pathname.startsWith("/api/") && !isSameOrigin(event)) {
+    throw error(403, "Forbidden");
+  }
+
   // intercept requests to GROCY_PROXY_PATH and handle them with `handleGrocyApiProxy`
   if (event.url.pathname.startsWith(GROCY_PROXY_PATH)) {
     return await handleGrocyApiProxy({ event, resolve });
