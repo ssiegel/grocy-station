@@ -27,6 +27,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 {#snippet button()}
     <WhiteButton 
         hidden={productState.selectedStockLogEntryIndex === undefined}
+        disabled={productState.progress != 0}
         modifiers="ml-auto self-stretch"
         onclick={async () => productState.doUndo()}
         label="Undo"

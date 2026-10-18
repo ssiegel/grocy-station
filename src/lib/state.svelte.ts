@@ -160,6 +160,9 @@ export class ProductState extends State {
   /** *Statefull* */
   selectedStockLogEntryIndex = $state(undefined as number | undefined);
 
+  private static readonly PENDING_REFRESH_MS = 400;
+  private pendingRefresh?: ReturnType<typeof setTimeout>;
+
   constructor(
     grocyData: GrocyData,
     progress: number,
@@ -246,6 +249,14 @@ export class ProductState extends State {
 
   async onDbChanged() {
     if (this.progress !== 0) {
+      // Another action is mid-flight; retry once it settles instead of
+      // dropping the change, which would leave the view stale.
+      if (this.pendingRefresh === undefined) {
+        this.pendingRefresh = setTimeout(() => {
+          this.pendingRefresh = undefined;
+          void this.onDbChanged();
+        }, ProductState.PENDING_REFRESH_MS);
+      }
       return;
     }
     this.progress = 25;
@@ -368,12 +379,20 @@ export class ProductState extends State {
   }
 
   async doUndo() {
+    if (this.selectedStockLogEntryIndex === undefined || this.progress !== 0) {
+      return;
+    }
     this.progress = 1;
-    let booking_id = this.grocyData.stock_log.splice(
-      this.selectedStockLogEntryIndex!,
+    const booking_id = this.grocyData.stock_log.splice(
+      this.selectedStockLogEntryIndex,
       1,
     )[0].id!;
+    // Indices shift after the splice, so the old selection no longer
+    // refers to the entry the user picked.
+    this.selectedStockLogEntryIndex = undefined;
     await GrocyClient.postRemoveBooking(booking_id);
+    await this.updateStock();
+    await this.updateStockLogs();
     this.progress = 100;
   }
 }
