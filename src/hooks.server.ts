@@ -37,6 +37,9 @@ const handleGrocyApiProxy: Handle = async ({ event }) => {
       headers: {
         ...Object.fromEntries(event.request.headers),
         "GROCY-API-KEY": env.GROCY_API_KEY ?? "",
+        // fetch leaves the upstream content-encoding header in place after
+        // already decompressing the body, so negotiate identity instead.
+        "accept-encoding": "identity",
       },
       // @ts-expect-error TS2769: Prevent "RequestInit: duplex option is required when sending a body"
       duplex: "half",
