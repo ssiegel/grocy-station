@@ -237,10 +237,12 @@ export class GrocyObjectCache {
             // @ts-expect-error TS2339: type information for '/objects/{entity}' is incomplete
             entry.cache.set(obj.id, obj);
           }
-          entry.lastFetchTime = Date.now();
         } catch (e) {
           console.error(`Failed to GET ${entity}:`, e);
         } finally {
+          // Record the attempt even on failure, so OBJECT_MIN_INTERVAL
+          // throttles retries instead of every cache miss refetching.
+          entry.lastFetchTime = Date.now();
           entry.getPromise = undefined;
         }
       })();
