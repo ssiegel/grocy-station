@@ -24,7 +24,13 @@ const listeners = new Set<(changedTime: string) => void>();
 
 function notifyListeners(changedTime: string) {
     for (const listener of listeners) {
-        listener(changedTime);
+        // Isolate listeners: a throw from one client's stream must not stop
+        // delivery to the others, nor escape the timer that called us.
+        try {
+            listener(changedTime);
+        } catch (e) {
+            console.error("Mercure: listener failed:", e);
+        }
     }
 }
 
