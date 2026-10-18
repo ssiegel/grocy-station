@@ -20,6 +20,7 @@ import { ProductState, type Page } from "$lib/state.svelte";
 const RECONNECT_MS = 5_000;
 
 let eventSource: EventSource | undefined;
+let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let page: Page | undefined;
 
 function attach(es: EventSource) {
@@ -36,13 +37,21 @@ function attach(es: EventSource) {
       // Retry manually after a delay.
       console.warn("db-events: SSE closed permanently, retrying in 5s…");
       es.close();
-      setTimeout(() => connect(), RECONNECT_MS);
+      if (reconnectTimer === undefined) {
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = undefined;
+          connect();
+        }, RECONNECT_MS);
+      }
     }
     // readyState === CONNECTING means native auto-reconnect is active.
   };
 }
 
 function connect() {
+  // Close any previous connection first, otherwise a double-scheduled
+  // reconnect leaves an orphaned EventSource delivering duplicate events.
+  eventSource?.close();
   eventSource = new EventSource("/api/db-events");
   attach(eventSource);
 }
@@ -53,6 +62,8 @@ export function setupDbEvents(p: Page) {
 }
 
 export function disconnectDbEvents() {
+  clearTimeout(reconnectTimer);
+  reconnectTimer = undefined;
   eventSource?.close();
   eventSource = undefined;
   page = undefined;
