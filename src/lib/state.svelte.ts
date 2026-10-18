@@ -60,6 +60,15 @@ export abstract class State {
     const fetchShoppingListItemsPromise = fetchProductShoppingListItems(
       productId,
     );
+    // These run concurrently, so a failure in one rejects before the others
+    // are awaited; without this they would surface as unhandled rejections.
+    const pending = Promise.all([
+      fetchProductDetailsPromise,
+      fetchStockPromise,
+      fetchStockLogPromise,
+      fetchShoppingListItemsPromise,
+    ]);
+    pending.catch(() => {});
     this.progress = 25;
 
     const grocyProductDetails = await fetchProductDetailsPromise;
@@ -408,12 +417,16 @@ export class Page {
   /** *Statefull* */
   state: State = $state(new InitState());
 
-  toErrorState(message: string, ms?: number) {
+  toErrorState(message: string, ms = 10_000) {
+    // Carrying the progress over would leave the bar stuck at whatever
+    // fraction the failed operation had reached.
     this.state = new ErrorState(
       message,
-      this.state.progress,
+      0,
       this.state.timeout,
     );
+    // An undefined delay makes setTimeout fire immediately, which would
+    // clear the message before it could be read.
     this.state.timeout = setTimeout(() => this.toWaitingState(), ms);
   }
 
