@@ -14,6 +14,7 @@ import { env } from "$env/dynamic/private";
 import { EventSource } from "eventsource";
 
 let eventSource: EventSource | null = null;
+let pendingEventSource: EventSource | null = null;
 let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
 let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
 let pollInterval: ReturnType<typeof setInterval> | undefined;
@@ -32,6 +33,14 @@ function notifyListeners(changedTime: string) {
             console.error("Mercure: listener failed:", e);
         }
     }
+}
+
+function detach(es: EventSource | null) {
+    if (!es) return;
+    es.onopen = null;
+    es.onmessage = null;
+    es.onerror = null;
+    es.close();
 }
 
 function startFallbackPolling() {
@@ -104,15 +113,23 @@ async function connect(): Promise<void> {
         url.searchParams.set("topic", "grocy/db-changed");
         url.searchParams.set("authorization", token);
 
+        // Abandon any earlier attempt that never opened, so it can neither
+        // linger unclosed nor open later and overwrite a newer connection.
+        detach(pendingEventSource);
         const newEventSource = new EventSource(url.toString());
+        pendingEventSource = newEventSource;
 
         newEventSource.onopen = () => {
+            if (pendingEventSource !== newEventSource) {
+                detach(newEventSource);
+                return;
+            }
+            pendingEventSource = null;
+
             // New connection is confirmed alive, stop any fallback polling and close the old connection.
             stopFallbackPolling();
             if (eventSource) {
-                eventSource.onmessage = null;
-                eventSource.onerror = null;
-                eventSource.close();
+                detach(eventSource);
             } else {
                 console.log(
                     `Mercure: SSE connection established (token refresh in ${refreshInSeconds}s)`,
@@ -141,13 +158,16 @@ async function connect(): Promise<void> {
 
         newEventSource.onerror = () => {
             console.warn("Mercure: SSE connection error, reconnecting in 5s...");
-            newEventSource.onmessage = null;
-            newEventSource.onerror = null;
-            newEventSource.close();
-            if (eventSource === newEventSource) {
-                eventSource = null;
+            detach(newEventSource);
+            if (pendingEventSource === newEventSource) {
+                pendingEventSource = null;
             }
-            startFallbackPolling();
+            // Only fall back to polling if we just lost the live connection:
+            // a failed refresh attempt leaves the previous one serving events.
+            if (eventSource === newEventSource || eventSource === null) {
+                eventSource = null;
+                startFallbackPolling();
+            }
             clearTimeout(refreshTimeout);
             refreshTimeout = setTimeout(() => void connect(), 5_000);
         };
