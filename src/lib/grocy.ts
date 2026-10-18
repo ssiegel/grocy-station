@@ -273,7 +273,7 @@ export class GrocyObjectCache {
     }
 
     if (id === undefined) {
-      return GrocyObjectCache.caches.get(entity)?.cache.values;
+      return GrocyObjectCache.toArray(entity);
     }
 
     const entry = GrocyObjectCache.caches.get(entity)!;
@@ -294,9 +294,19 @@ export class GrocyObjectCache {
     id?: number,
   ): GrocyObject | undefined {
     if (id === undefined) {
-      return GrocyObjectCache.caches.get(entity)?.cache.values;
+      return GrocyObjectCache.toArray(entity);
     }
     return GrocyObjectCache.caches.get(entity)?.cache.get(id);
+  }
+
+  /** All cached objects for an entity, or undefined if never fetched. */
+  private static toArray(
+    entity: CacheableEntities,
+  ): GrocyObject | undefined {
+    const entry = GrocyObjectCache.caches.get(entity);
+    return entry
+      ? [...entry.cache.values()] as unknown as GrocyObject
+      : undefined;
   }
 }
 
