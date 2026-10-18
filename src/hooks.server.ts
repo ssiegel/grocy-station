@@ -3,10 +3,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // cf. https://sami.website/blog/sveltekit-api-reverse-proxy
-import { error, type Handle } from "@sveltejs/kit";
+import { error, type Handle, type ServerInit } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
 
 const GROCY_PROXY_PATH = "/api/grocy";
+
+export const init: ServerInit = () => {
+  console.log(`Grocy Station version ${__APP_VERSION__}`);
+};
 
 // Require requests to /api/* to originate from the same origin, to prevent
 // 3rd party sites from using this server as a proxy or event relay.
