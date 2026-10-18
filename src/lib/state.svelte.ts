@@ -232,6 +232,13 @@ export class ProductState extends State {
     this.consumeValid = remaining === 0;
   }
 
+  resetQuantity() {
+    this.inputQuantity = "1";
+    this.inputUnitSize = String(this.grocyData.packaging_units![0].amount);
+    this.selectedStockEntryIndex = 0;
+    this.reAllot();
+  }
+
   increaseQuantity() {
     if (Number.isFinite(this.quantity())) {
       this.inputQuantity = String(Math.max(0, this.quantity()) + 1);
@@ -353,6 +360,7 @@ export class ProductState extends State {
 
     triggerShoppingListUpdate();
 
+    this.resetQuantity();
     await this.updateStock();
     await this.updateStockLogs();
     this.progress = 100;
@@ -383,6 +391,7 @@ export class ProductState extends State {
         this.productId,
       );
     }
+    this.resetQuantity();
     await this.updateShoppingListItems();
     this.progress = 100;
   }
@@ -400,6 +409,7 @@ export class ProductState extends State {
     // refers to the entry the user picked.
     this.selectedStockLogEntryIndex = undefined;
     await GrocyClient.postRemoveBooking(booking_id);
+    this.resetQuantity();
     await this.updateStock();
     await this.updateStockLogs();
     this.progress = 100;
@@ -437,14 +447,6 @@ export class Page {
   async doBarcode(
     barcode: string,
   ) {
-    if (
-      (this.state instanceof ProductState) &&
-      (this.state.grocyData.barcode.barcode === barcode) &&
-      Number.isFinite(this.state.quantity())
-    ) {
-      return this.state.increaseQuantity();
-    }
-
     this.state = new ProductState(
       await this.state.fetchGrocyData(barcode),
       this.state.progress,
