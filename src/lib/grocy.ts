@@ -15,11 +15,10 @@ import type {
 } from "$lib/types/grocy";
 import createClient from "openapi-fetch";
 
-function AbortTimeoutController() {
-  const API_TIMEOUT_MS = 10_000;
-  const ctrl = new AbortController();
-  setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
-  return ctrl;
+const API_TIMEOUT_MS = 10_000;
+
+function abortTimeoutSignal(): AbortSignal {
+  return AbortSignal.timeout(API_TIMEOUT_MS);
 }
 
 export class GrocyClient {
@@ -48,7 +47,7 @@ export class GrocyClient {
           path: { entity: entity },
           query: { "query[]": query, order: order, limit: limit },
         },
-        signal: AbortTimeoutController().signal,
+        signal: abortTimeoutSignal(),
       }),
     );
   }
@@ -74,7 +73,7 @@ export class GrocyClient {
         params: {
           path: { productId: product_id },
         },
-        signal: AbortTimeoutController().signal,
+        signal: abortTimeoutSignal(),
       }),
     ) as GrocyProductDetails;
   }
@@ -109,7 +108,7 @@ export class GrocyClient {
         params: {
           path: { productId: product_id },
         },
-        signal: AbortTimeoutController().signal,
+        signal: abortTimeoutSignal(),
       }),
     ) as GrocyStockEntry[];
   }
@@ -125,7 +124,7 @@ export class GrocyClient {
         body: {
           list_id: list_id,
         },
-        signal: AbortTimeoutController().signal,
+        signal: abortTimeoutSignal(),
       },
     );
   }
@@ -150,7 +149,7 @@ export class GrocyClient {
         shopping_list_id: shopping_list_id,
         amount: amount,
       },
-      signal: AbortTimeoutController().signal,
+      signal: abortTimeoutSignal(),
     });
   }
 
@@ -170,7 +169,7 @@ export class GrocyClient {
           amount: amount_allotted,
           stock_entry_id: stock_id,
         },
-        signal: AbortTimeoutController().signal,
+        signal: abortTimeoutSignal(),
       },
     );
   }
@@ -188,7 +187,7 @@ export class GrocyClient {
           list_id: list_id,
           product_amount: product_amount,
         },
-        signal: AbortTimeoutController().signal,
+        signal: abortTimeoutSignal(),
       },
     );
   }
@@ -202,7 +201,7 @@ export class GrocyClient {
         params: {
           path: { bookingId: booking_id },
         },
-        signal: AbortTimeoutController().signal,
+        signal: abortTimeoutSignal(),
       },
     );
   }
