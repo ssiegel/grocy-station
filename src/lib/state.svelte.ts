@@ -250,14 +250,17 @@ export class ProductState extends State {
     }
     this.progress = 25;
 
-    const promises: Promise<void>[] = [];
-    promises.push(this.updateStock());
-    promises.push(this.updateStockLogs());
-    this.progress = 50;
-    promises.push(this.updateShoppingListItems());
-    this.progress = 75;
-    Promise.all(promises);
-    this.progress = 100;
+    try {
+      await Promise.all([
+        this.updateStock(),
+        this.updateStockLogs(),
+        this.updateShoppingListItems(),
+      ]);
+    } catch (e) {
+      console.warn("onDbChanged: refresh failed:", e);
+    } finally {
+      this.progress = 100;
+    }
   }
 
   async updateStock() {
