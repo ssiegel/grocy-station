@@ -171,13 +171,20 @@ export class ProductState extends State {
 
   private refreshing?: Promise<void>;
   private refreshQueued = false;
+  /**
+   * Grocy's db-changed time as of the start of the most recent successful
+   * read. Changes at or before it are already reflected in `grocyData`.
+   */
+  private watermark?: string;
 
   constructor(
     grocyData: GrocyData,
+    changedTime: string | undefined,
     progress: number,
     state_timeout: ReturnType<typeof setTimeout> | undefined,
   ) {
     super(progress, state_timeout);
+    this.watermark = changedTime;
     this.grocyData = $state(grocyData);
     // product_details.product.id is fetched based on barcode.product_id
     this.productId = $derived(grocyData.barcode.product_id);
@@ -263,7 +270,12 @@ export class ProductState extends State {
     );
   }
 
-  async onDbChanged() {
+  async onDbChanged(changedTime: string) {
+    // Our own writes notify us too; a change at or before the watermark is
+    // already reflected in the last read.
+    if (this.watermark !== undefined && changedTime <= this.watermark) {
+      return;
+    }
     await this.refresh();
   }
 
@@ -284,11 +296,17 @@ export class ProductState extends State {
           // Don't drag the bar backwards over an action's own progress.
           this.progress = Math.max(this.progress, 25);
           try {
+            // Must precede the reads: a watermark taken afterwards would
+            // cover changes they never saw.
+            const changedTime = await GrocyClient.getDbChangedTime();
             await Promise.all([
               this.updateStock(),
               this.updateStockLogs(),
               this.updateShoppingListItems(),
             ]);
+            // A watermark must never claim data we failed to read; keeping
+            // the older one costs at most a redundant refresh.
+            this.watermark = changedTime;
           } catch (e) {
             console.warn("refresh failed:", e);
           }
@@ -450,8 +468,11 @@ export class Page {
   async doBarcode(
     barcode: string,
   ) {
+    // Must precede the data, so it cannot cover changes the scan missed.
+    const changedTime = await GrocyClient.getDbChangedTime();
     this.state = new ProductState(
       await this.state.fetchGrocyData(barcode),
+      changedTime,
       this.state.progress,
       this.state.timeout,
     );

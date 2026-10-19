@@ -52,6 +52,18 @@ export class GrocyClient {
     );
   }
 
+  /**
+   * Timestamp of the last database change, as `2026-03-15T14:23:01.123456Z`.
+   * Undefined on a database that has never been written.
+   */
+  public static async getDbChangedTime(): Promise<string | undefined> {
+    return this.unwrapOFData(
+      await this.BASE_CLIENT.GET("/system/db-changed-time", {
+        signal: abortTimeoutSignal(),
+      }),
+    ).changed_time ?? undefined;
+  }
+
   public static async getBarcode(
     barcode: string,
   ): Promise<GrocyBarcode[]> {

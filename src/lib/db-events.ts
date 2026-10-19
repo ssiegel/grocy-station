@@ -25,9 +25,9 @@ let page: Page | undefined;
 
 function attach(es: EventSource) {
   es.onmessage = (event) => {
-    // const { changed_time } = JSON.parse(event.data) as { changed_time: string };
+    const { changed_time } = JSON.parse(event.data) as { changed_time: string };
     if (page?.state instanceof ProductState) {
-      void page.state.onDbChanged();
+      void page.state.onDbChanged(changed_time);
     }
   };
 
