@@ -75,16 +75,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         </div>
         <div class="stepper">
             <button
-                onclick={() => {
-                    if (Number.isFinite(productState.quantity()))
-                        productState.increaseQuantity();
-                }}>+</button
+                disabled={!Number.isFinite(productState.quantity())}
+                onclick={() => productState.increaseQuantity()}>+</button
             >
             <button
-                onclick={() => {
-                    if (Number.isFinite(productState.quantity()))
-                        productState.decreaseQuantity();
-                }}>−</button
+                disabled={!Number.isFinite(productState.quantity())}
+                onclick={() => productState.decreaseQuantity()}>−</button
             >
         </div>
         {#if Number.isFinite(productState.consumeAmount)}
