@@ -70,39 +70,12 @@
   --color-input-fg: var(--color-primary-default);
 
   --color-label-fg: var(--color-shade-highest);
-
-  /* Reserved palette: designed but not currently used. Kept commented out so
-   * the design work stays available without shipping unused declarations;
-   * each one resolves on its own, so any can be enabled in isolation. */
-
-  /* --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; */
-  /* --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */
-
-  /* --color-primary-50:  #FFF5F2; */
-  /* --color-primary-100: #FFF1EE; */
-  /* --color-primary-200: #FFE4DE; */
-  /* --color-primary-300: #FFD5CC; */
-  /* --color-primary-400: #FFBCAD; */
-  /* --color-primary-500: #FE795D; */
-  /* --color-primary-600: #EF562F; */
-  /* --color-primary-700: #EB4F27; */
-  /* --color-primary-800: #CC4522; */
-  /* --color-primary-900: #A5371B; */
-
-  /* --color-base-shadow: var(--color-darken); */
-
-  /* --color-container-bg-active: var(--color-shade-higher); */
-  /* --color-container-bg-focus: var(--color-shade-high); */
-  /* --color-container-bg-hover: var(--color-shade-default); */
-
-  /* --color-monitor-bg: var(--color-darken); */
-  /* --color-monitor-fg: var(--color-shade-highest); */
-
-  /* --color-groove-fg: var(--color-shade-low); */
 }
 
 /* Reset, deliberately scoped to the elements this app actually renders
- * (div, span, button, input, label, br, svg) rather than a general-purpose one. */
+ * (div, span, button, input, label, br, svg) rather than a general-purpose one.
+ * Element-specific UA defaults - list markers, heading sizes, link underlines,
+ * table border spacing - are therefore left in place. */
 
 *,
 *::before,
