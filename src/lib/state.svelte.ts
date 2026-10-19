@@ -358,7 +358,7 @@ export class ProductState extends State {
       ),
     );
 
-    triggerShoppingListUpdate();
+    await triggerShoppingListUpdate();
 
     this.resetQuantity();
     await this.updateStock();
@@ -367,29 +367,25 @@ export class ProductState extends State {
   }
 
   async doShoppingList() {
+    if (this.progress !== 0) return;
     this.progress = 1;
-    //await triggerShoppingListUpdate() // makes amount unpredictable if adding same product.
-    this.updateShoppingListItems();
+    // Not triggerShoppingListUpdate(): it makes the amount unpredictable
+    // when adding the same product again.
+    await this.updateShoppingListItems();
     this.progress = 50;
 
     if (this.addShoppingListValid) {
-      const removePromises = [];
-      for (
-        const doneShoppingListItem of this.grocyData.shopping_list_items!
-      ) {
-        removePromises.push(
+      await Promise.all(
+        this.grocyData.shopping_list_items.map((doneShoppingListItem) =>
           GrocyClient.postRemoveProductShopping(
             doneShoppingListItem.product_id,
             doneShoppingListItem.amount,
             doneShoppingListItem.shopping_list_id,
-          ),
-        );
-      }
-      Promise.all(removePromises);
-      this.progress = 75;
-      GrocyClient.postAddToShoppingList(
-        this.productId,
+          )
+        ),
       );
+      this.progress = 75;
+      await GrocyClient.postAddToShoppingList(this.productId);
     }
     this.resetQuantity();
     await this.updateShoppingListItems();
