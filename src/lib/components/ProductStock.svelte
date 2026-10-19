@@ -240,7 +240,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
     @media (hover: hover) {
         input:hover,
-        .stepper button:hover {
+        .stepper button:not(:disabled):hover {
             background-color: var(--color-input-bg-hover);
         }
     }
