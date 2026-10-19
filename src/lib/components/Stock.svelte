@@ -150,7 +150,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     .note {
-        grid-column: 2 / span 3;
         padding-inline: 1rem;
         font-style: italic;
     }
