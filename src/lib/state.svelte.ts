@@ -169,8 +169,8 @@ export class ProductState extends State {
   /** *Statefull* */
   selectedStockLogEntryIndex = $state(undefined as number | undefined);
 
-  private static readonly PENDING_REFRESH_MS = 400;
-  private pendingRefresh?: ReturnType<typeof setTimeout>;
+  private refreshing?: Promise<void>;
+  private refreshQueued = false;
 
   constructor(
     grocyData: GrocyData,
@@ -264,30 +264,42 @@ export class ProductState extends State {
   }
 
   async onDbChanged() {
-    if (this.progress !== 0) {
-      // Another action is mid-flight; retry once it settles instead of
-      // dropping the change, which would leave the view stale.
-      if (this.pendingRefresh === undefined) {
-        this.pendingRefresh = setTimeout(() => {
-          this.pendingRefresh = undefined;
-          void this.onDbChanged();
-        }, ProductState.PENDING_REFRESH_MS);
-      }
-      return;
-    }
-    this.progress = 25;
+    await this.refresh();
+  }
 
-    try {
-      await Promise.all([
-        this.updateStock(),
-        this.updateStockLogs(),
-        this.updateShoppingListItems(),
-      ]);
-    } catch (e) {
-      console.warn("onDbChanged: refresh failed:", e);
-    } finally {
-      this.progress = 100;
+  /**
+   * Re-read everything this view displays, coalescing concurrent requests
+   * so the result never predates the latest one.
+   */
+  refresh(): Promise<void> {
+    if (this.refreshing !== undefined) {
+      this.refreshQueued = true;
+      return this.refreshing;
     }
+
+    this.refreshing = (async () => {
+      try {
+        do {
+          this.refreshQueued = false;
+          // Don't drag the bar backwards over an action's own progress.
+          this.progress = Math.max(this.progress, 25);
+          try {
+            await Promise.all([
+              this.updateStock(),
+              this.updateStockLogs(),
+              this.updateShoppingListItems(),
+            ]);
+          } catch (e) {
+            console.warn("refresh failed:", e);
+          }
+        } while (this.refreshQueued);
+        this.progress = 100;
+      } finally {
+        this.refreshing = undefined;
+      }
+    })();
+
+    return this.refreshing;
   }
 
   async updateStock() {
@@ -361,9 +373,7 @@ export class ProductState extends State {
     await triggerShoppingListUpdate();
 
     this.resetQuantity();
-    await this.updateStock();
-    await this.updateStockLogs();
-    this.progress = 100;
+    await this.refresh();
   }
 
   async doShoppingList() {
@@ -388,8 +398,7 @@ export class ProductState extends State {
       await GrocyClient.postAddToShoppingList(this.productId);
     }
     this.resetQuantity();
-    await this.updateShoppingListItems();
-    this.progress = 100;
+    await this.refresh();
   }
 
   async doUndo() {
@@ -406,9 +415,7 @@ export class ProductState extends State {
     this.selectedStockLogEntryIndex = undefined;
     await GrocyClient.postRemoveBooking(booking_id);
     this.resetQuantity();
-    await this.updateStock();
-    await this.updateStockLogs();
-    this.progress = 100;
+    await this.refresh();
   }
 }
 
