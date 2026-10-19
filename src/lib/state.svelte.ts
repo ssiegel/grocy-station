@@ -338,9 +338,7 @@ export class ProductState extends State {
     this.grocyData.stock = fetchedStock;
 
     // Trigger recalculation of allotted amounts
-    if (this instanceof ProductState) {
-      this.reAllot();
-    }
+    this.reAllot();
   }
 
   async doConsume(open: boolean) {
