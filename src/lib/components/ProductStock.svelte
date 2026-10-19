@@ -16,25 +16,23 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     const productDetails = $derived(productData.product_details)
 </script>
 
-<div
-    class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between"
->
+<div class="titlebar">
     <div>{productDetails.product.name ?? "\u00a0"}</div>
     {#if productData.product_group?.name}
-        <div class="text-xl whitespace-nowrap">
+        <div class="product-group">
             {productData.product_group.name}
         </div>
     {/if}
 </div>
 
-<div class="text-label-fg px-2 flex flex-col gap-1 items-stretch text-2xl">
+<div class="panel">
     {#if productData.barcode !== undefined && !productData.barcode.barcode.startsWith("grcy:p:")}
-        <div class="text-xl">
+        <div class="barcode">
             {productData.barcode.barcode}
-            <span class="italic">{productData.barcode.note}</span>
+            <span class="note">{productData.barcode.note}</span>
         </div>
     {/if}
-    <div class="flex flex-row gap-4 items-stretch justify-start">
+    <div class="packaging-units">
         {#each productData.packaging_units as pu}
             <WhiteButton
                 onclick={() => (productState.inputUnitSize = String(pu.amount))}
@@ -46,21 +44,17 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             </WhiteButton>
         {/each}
     </div>
-    <div class="flex flex-row gap-2 items-center justify-start">
+    <div class="amount-row">
         <div>
             <label>
-                <span class="text-xl">Unit size</span>
+                <span class="field-label">Unit size</span>
                 <br />
                 <input
                     bind:value={productState.inputUnitSize}
                     type="text"
                     inputmode="numeric"
                     size="4"
-                    class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                        productState.unitSize(),
-                    )
-                        ? 'text-input-fg'
-                        : 'text-red-500'}"
+                    class:invalid={!Number.isFinite(productState.unitSize())}
                 />
                 {formatUnit(productDetails.quantity_unit_stock.id)}
             </label>
@@ -68,31 +62,25 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <div><span>×</span></div>
         <div>
             <label>
-                <span class="text-xl">Quantity</span>
+                <span class="field-label">Quantity</span>
                 <br />
                 <input
                     bind:value={productState.inputQuantity}
                     type="text"
                     inputmode="numeric"
                     size="4"
-                    class="px-2 py-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active {Number.isFinite(
-                        productState.quantity(),
-                    )
-                        ? 'text-input-fg'
-                        : 'text-red-500'}"
+                    class:invalid={!Number.isFinite(productState.quantity())}
                 />
             </label>
         </div>
-        <div class="self-stretch flex flex-col gap-2 text-md">
+        <div class="stepper">
             <button
-                class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                 onclick={() => {
                     if (Number.isFinite(productState.quantity()))
                         productState.increaseQuantity();
                 }}>+</button
             >
             <button
-                class="flex-1 bg-input-bg-default hover:bg-input-bg-hover focus:bg-input-bg-focus active:bg-input-bg-active text-input-fg disabled:text-input-bg-focus px-2 py-0"
                 onclick={() => {
                     if (Number.isFinite(productState.quantity()))
                         productState.decreaseQuantity();
@@ -102,7 +90,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         {#if Number.isFinite(productState.consumeAmount)}
             <div><span>=</span></div>
             <div>
-                <span class={productState.consumeValid ? "" : "text-red-500"}
+                <span class:invalid={!productState.consumeValid}
                     >{formatNumber(
                         productState.consumeAmount,
                         productDetails.quantity_unit_stock.id,
@@ -110,7 +98,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 >
             </div>
         {/if}
-        <div class="ml-auto self-stretch">
+        <div class="action push-right">
             <WhiteButton 
                 disabled={!productState.addShoppingListValid || productState.progress != 0}
                 onclick={async () => productState.doShoppingList()}
@@ -119,7 +107,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <svg inline-src="shoppinglist-fa" height="1.5em" fill="currentColor" />
             </WhiteButton>    
         </div>
-        <div class="self-stretch">
+        <div class="action">
             <WhiteButton 
                 disabled={!productState.consumeValid || productState.progress != 0}
                 onclick={async () => productState.doConsume(true)}
@@ -128,7 +116,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <svg inline-src="open" height="1.5em" fill="currentColor" />
             </WhiteButton>
         </div>
-        <div class="self-stretch">
+        <div class="action">
             <WhiteButton 
                 disabled={!productState.consumeValid || productState.progress != 0}
                 onclick={async () => productState.doConsume(false)}
@@ -141,3 +129,123 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     <Stock {productState} />
     <StockJournal {productState} />
 </div>
+
+<style>
+    .titlebar {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.25rem 0.5rem;
+        color: var(--color-container-fg);
+        background-color: var(--color-container-bg-default);
+    }
+
+    .product-group {
+        font-size: var(--text-xl);
+        line-height: var(--text-xl--line-height);
+        white-space: nowrap;
+    }
+
+    .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        align-items: stretch;
+        padding-inline: 0.5rem;
+        font-size: var(--text-2xl);
+        line-height: var(--text-2xl--line-height);
+        color: var(--color-label-fg);
+    }
+
+    .barcode {
+        font-size: var(--text-xl);
+        line-height: var(--text-xl--line-height);
+    }
+
+    .note {
+        font-style: italic;
+    }
+
+    .packaging-units {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: stretch;
+        justify-content: flex-start;
+    }
+
+    .amount-row {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .field-label {
+        font-size: var(--text-xl);
+        line-height: var(--text-xl--line-height);
+    }
+
+    input {
+        padding: 0.25rem 0.5rem;
+        color: var(--color-input-fg);
+        background-color: var(--color-input-bg-default);
+    }
+
+    input:focus {
+        background-color: var(--color-input-bg-focus);
+    }
+
+    input:active {
+        background-color: var(--color-input-bg-active);
+    }
+
+    .invalid {
+        color: var(--color-red-500);
+    }
+
+    .stepper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-self: stretch;
+    }
+
+    .stepper button {
+        flex: 1;
+        padding-inline: 0.5rem;
+        color: var(--color-input-fg);
+        background-color: var(--color-input-bg-default);
+    }
+
+    .stepper button:disabled {
+        color: var(--color-input-bg-focus);
+    }
+
+    .stepper button:focus {
+        background-color: var(--color-input-bg-focus);
+    }
+
+    .stepper button:active {
+        background-color: var(--color-input-bg-active);
+    }
+
+    /* Wrappers: scoped styles cannot reach the button inside WhiteButton. */
+    .action {
+        align-self: stretch;
+    }
+
+    .push-right {
+        margin-left: auto;
+    }
+
+    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
+    @media (hover: hover) {
+        input:hover,
+        .stepper button:hover {
+            background-color: var(--color-input-bg-hover);
+        }
+    }
+</style>

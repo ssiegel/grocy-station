@@ -65,31 +65,24 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     });
 </script>
 
-<div class="text-2xl flex flex-col gap-2 items-stretch min-h-screen">
+<div class="app">
     <!-- progressbar: the if makes reset (aka 100 => 0) transition more natural. -->
     {#if pageState.progress}
-        <div class="fixed top-0 left-0 w-full h-[2px] z-50 pointer-events-none">
-            <div
-                class="bg-yellow-500 h-full transition-all duration-300"
-                style="width: {pageState.progress}%"
-            ></div>
+        <div class="progress">
+            <div class="progress-bar" style="width: {pageState.progress}%"></div>
         </div>
     {/if}
-    <div
-        class="bg-container-bg-default text-container-fg px-2 py-1 flex flex-row items-center justify-between"
-    >
+    <div class="titlebar">
         <div>Grocy Station</div>
-        <Clock class="text-xl" />
+        <Clock />
     </div>
 
     {#if pageState instanceof ErrorState}
-        <div
-            class="text-label-fg px-2 grow flex items-center justify-center text-center text-red-400"
-        >
+        <div class="message error">
             {pageState.message}
         </div>
     {:else if pageState instanceof MessageState}
-        <div class="text-label-fg px-2 grow flex items-center justify-center text-center">
+        <div class="message">
             {pageState.message}
         </div>
     {:else if pageState instanceof ProductState}
@@ -97,9 +90,71 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     {/if}
 </div>
 
-<div class="text-label-fg fixed bottom-1 right-2 text-xs opacity-30 pointer-events-none select-none">
+<div class="version">
     v{__APP_VERSION__}
 </div>
 
 <style>
+    .app {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+        min-height: 100vh;
+        min-height: 100dvh;  /* ignored by pre-108 WebView */
+        font-size: var(--text-2xl);
+        line-height: var(--text-2xl--line-height);
+    }
+
+    .progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 50;
+        width: 100%;
+        height: 2px;
+        pointer-events: none;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: var(--color-yellow-500);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .titlebar {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.25rem 0.5rem;
+        color: var(--color-container-fg);
+        background-color: var(--color-container-bg-default);
+    }
+
+    .message {
+        display: flex;
+        flex-grow: 1;
+        align-items: center;
+        justify-content: center;
+        padding-inline: 0.5rem;
+        text-align: center;
+        color: var(--color-label-fg);
+    }
+
+    .message.error {
+        color: var(--color-red-400);
+    }
+
+    .version {
+        position: fixed;
+        right: 0.5rem;
+        bottom: 0.25rem;
+        font-size: var(--text-xs);
+        line-height: var(--text-xs--line-height);
+        color: var(--color-label-fg);
+        opacity: 0.3;
+        pointer-events: none;
+        user-select: none;
+    }
 </style>

@@ -26,7 +26,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 {#if productData.stock !== undefined || productDetails !== undefined}
-    <div class="bg-container-bg-default text-container-fg px-2 py-1">
+    <div class="header">
         {#if productDetails.stock_amount}
             Stock amount: {formatNumber(
                 productDetails.stock_amount,
@@ -43,11 +43,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         {/if}
     </div>
     {#if productData.stock.length}
-        <div
-            class="text-label-fg px-0 grid grid-cols-[max-content_max-content_max-content_max-content_1fr] gap-x-2 text-lg"
-        >
-            <div class="pl-2 justify-self-end">Qty</div>
-            <div class="justify-self-end">Amt</div>
+        <div class="grid">
+            <div class="indent align-end">Qty</div>
+            <div class="align-end">Amt</div>
             <div>
                 {productDetails.product.due_type === 2 ? "Exp" : "Due"}
             </div>
@@ -56,16 +54,17 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             {#each productData.stock as entry, i (entry.id)}
                 <div
                     style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
-                    class="opacity-20 {i % 2 ? 'bg-darken' : 'bg-shade-low'}"
+                    class="stripe"
+                    class:odd={i % 2}
                 ></div>
                 <div
                     style="grid-area: {i * 2 + 2} / 1"
-                    class="pl-2 justify-self-end whitespace-nowrap"
+                    class="indent align-end nowrap"
                 >
                     {#if entry.open === 1}
                         <svg
                             inline-src="open"
-                            class="inline pb-1"
+                            class="open-icon"
                             height="1em"
                             fill="currentColor"
                         />
@@ -74,7 +73,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 </div>
                 <div
                     style="grid-area: {i * 2 + 2} / 2"
-                    class="justify-self-end whitespace-nowrap"
+                    class="align-end nowrap"
                 >
                     {formatNumber(entry.amount, productDetails.quantity_unit_stock.id)}
                 </div>
@@ -91,20 +90,21 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 {#if entry.note}
                     <div
                         style="grid-area: {i * 2 + 3} / 3 / {i * 2 + 4} / 6"
-                        class="col-start-2 col-span-3 px-4 italic"
+                        class="note"
                     >
                         {entry.note}
                     </div>
                 {/if}
                 <div
                     style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
-                    class="hover:bg-shade-default z-10 border-yellow-500 border-l-4 border-{
+                    class="target"
+                    data-allot={
                         productState.consumeValid && entry.amount_allotted > 0
                             ? entry.amount_allotted < entry.amount
-                                ? 'dotted' 
-                                : 'solid'
+                                ? 'partial'
+                                : 'full'
                             : 'none'
-                    }"
+                    }
                     use:pressaction
                     onlongpress={() => {stockEntryPressed(i); stockEntryLongPressed(entry)}}
                     onshortpress={() => stockEntryPressed(i)}
@@ -115,3 +115,74 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         </div>
     {/if}
 {/if}
+
+<style>
+    .header {
+        padding: 0.25rem 0.5rem;
+        color: var(--color-container-fg);
+        background-color: var(--color-container-bg-default);
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: max-content max-content max-content max-content 1fr;
+        column-gap: 0.5rem;
+        font-size: var(--text-lg);
+        line-height: var(--text-lg--line-height);
+        color: var(--color-label-fg);
+    }
+
+    .indent {
+        padding-left: 0.5rem;
+    }
+
+    .align-end {
+        justify-self: end;
+    }
+
+    .nowrap {
+        white-space: nowrap;
+    }
+
+    .open-icon {
+        display: inline;
+        padding-bottom: 0.25rem;
+    }
+
+    .note {
+        grid-column: 2 / span 3;
+        padding-inline: 1rem;
+        font-style: italic;
+    }
+
+    /* Zebra striping, drawn as a backdrop spanning the full row. */
+    .stripe {
+        background-color: var(--color-shade-low);
+        opacity: 0.2;
+    }
+
+    .stripe.odd {
+        background-color: var(--color-darken);
+    }
+
+    /* Press target overlaying the row; the left border marks allotment. */
+    .target {
+        z-index: 10;
+        border-left: 4px none var(--color-yellow-500);
+    }
+
+    .target[data-allot="full"] {
+        border-left-style: solid;
+    }
+
+    .target[data-allot="partial"] {
+        border-left-style: dotted;
+    }
+
+    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
+    @media (hover: hover) {
+        .target:hover {
+            background-color: var(--color-shade-default);
+        }
+    }
+</style>

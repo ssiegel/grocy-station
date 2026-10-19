@@ -5,12 +5,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <script lang="ts">
     import { onMount } from "svelte";
 
-    interface Props {
-        class?: string;
-    }
-
-    let { class: className = "" }: Props = $props();
-
     let currentTime = $state(Date.now());
     let updateClockTimer: ReturnType<typeof setTimeout>;
     function updateClock() {
@@ -26,7 +20,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     });
 </script>
 
-<div class={className}>
+<div class="clock">
     {new Date(currentTime + 500)
         .toLocaleString("en-CA", {
             weekday: "long",
@@ -40,3 +34,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         })
         .replaceAll(", ", "\u2002")}
 </div>
+
+<style>
+    .clock {
+        font-size: var(--text-xl);
+        line-height: var(--text-xl--line-height);
+    }
+</style>

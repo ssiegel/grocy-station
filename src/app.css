@@ -1,0 +1,149 @@
+/*
+ * SPDX-FileCopyrightText: © 2024 [these people](https://github.com/sveltejs/cli/graphs/contributors)
+ * SPDX-FileCopyrightText: © 2026 Stefan Siegel <ssiegel@sdas.net>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/* Global styles. Component-specific styles live in the <style> section of the
+ * respective .svelte file. */
+
+:root {
+  /* Type scale. Each size is paired with its line height; use both together,
+   * a size without its line height changes the vertical rhythm. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.33333;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.55556;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.33333;
+
+  /* Accent colors, taken from the Tailwind palette this project started with. */
+  --color-red-400: oklch(70.4% 0.191 22.216);
+  --color-red-500: oklch(63.7% 0.237 25.331);
+  --color-yellow-500: oklch(79.5% 0.184 86.047);
+
+  /* Charcoal scale */
+  --color-charcoal-830: hsla(230, 7%, 17%, 1.00);
+  --color-charcoal-300: hsla(230, 7%, 70%, 1.00);
+  --color-charcoal-250-70: hsla(230, 7%, 75%, 0.70);
+  --color-charcoal-250-25: hsla(230, 7%, 75%, 0.25);
+  --color-charcoal-250-20: hsla(230, 7%, 75%, 0.20);
+  --color-charcoal-250-15: hsla(230, 7%, 75%, 0.15);
+  --color-charcoal-250-10: hsla(230, 7%, 75%, 0.10);
+  --color-charcoal-250: hsla(230, 7%, 75%, 1.00);
+  --color-charcoal-200: hsla(230, 7%, 80%, 1.00);
+  --color-charcoal-150: hsla(230, 7%, 85%, 1.00);
+  --color-charcoal-1000-20: hsla(230, 7%, 0%, 0.20);
+
+  /* Semantic roles */
+  --color-base: var(--color-charcoal-830);
+  --color-darken: var(--color-charcoal-1000-20);
+  --color-primary-dark: var(--color-charcoal-300);
+  --color-primary-default: var(--color-charcoal-250);
+  --color-primary-light: var(--color-charcoal-200);
+  --color-primary-lighter: var(--color-charcoal-150);
+  --color-shade-low: var(--color-charcoal-250-10);
+  --color-shade-default: var(--color-charcoal-250-15);
+  --color-shade-high: var(--color-charcoal-250-20);
+  --color-shade-higher: var(--color-charcoal-250-25);
+  --color-shade-highest: var(--color-charcoal-250-70);
+  --color-text: var(--color-charcoal-830);
+
+  --color-base-bg: var(--color-base);
+
+  --color-btn-bg-active: var(--color-primary-lighter);
+  --color-btn-bg-default: var(--color-primary-dark);
+  --color-btn-bg-focus: var(--color-primary-light);
+  --color-btn-bg-hover: var(--color-primary-default);
+  --color-btn-fg: var(--color-text);
+
+  --color-container-bg-default: var(--color-shade-low);
+  --color-container-fg: var(--color-primary-default);
+
+  --color-input-bg-active: var(--color-shade-higher);
+  --color-input-bg-default: var(--color-shade-low);
+  --color-input-bg-focus: var(--color-shade-high);
+  --color-input-bg-hover: var(--color-shade-default);
+  --color-input-fg: var(--color-primary-default);
+
+  --color-label-fg: var(--color-shade-highest);
+
+  /* Reserved palette: designed but not currently used. Kept commented out so
+   * the design work stays available without shipping unused declarations;
+   * each one resolves on its own, so any can be enabled in isolation. */
+
+  /* --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; */
+  /* --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */
+
+  /* --color-primary-50:  #FFF5F2; */
+  /* --color-primary-100: #FFF1EE; */
+  /* --color-primary-200: #FFE4DE; */
+  /* --color-primary-300: #FFD5CC; */
+  /* --color-primary-400: #FFBCAD; */
+  /* --color-primary-500: #FE795D; */
+  /* --color-primary-600: #EF562F; */
+  /* --color-primary-700: #EB4F27; */
+  /* --color-primary-800: #CC4522; */
+  /* --color-primary-900: #A5371B; */
+
+  /* --color-base-shadow: var(--color-darken); */
+
+  /* --color-container-bg-active: var(--color-shade-higher); */
+  /* --color-container-bg-focus: var(--color-shade-high); */
+  /* --color-container-bg-hover: var(--color-shade-default); */
+
+  /* --color-monitor-bg: var(--color-darken); */
+  /* --color-monitor-fg: var(--color-shade-highest); */
+
+  /* --color-groove-fg: var(--color-shade-low); */
+}
+
+/* Reset, deliberately scoped to the elements this app actually renders
+ * (div, span, button, input, label, br, svg) rather than a general-purpose one. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0 solid;
+}
+
+button,
+input {
+  /* Without this, form controls drop out of the font and size cascade. */
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+button {
+  appearance: button;
+}
+
+svg {
+  /* Icons sit inside flex buttons and are sized via height. */
+  display: block;
+  vertical-align: middle;
+}
+
+[hidden]:where(:not([hidden="until-found"])) {
+  /* The UA rule for this loses to any explicit display declaration. */
+  display: none !important;
+}
+
+html {
+  /* Spelled out rather than referenced via a custom property: font-magician
+   * scans declared font families and would not see it through var(). */
+  font-family: "Tanohe Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  line-height: 1.5;
+  background-color: var(--color-base-bg);
+  user-select: none;
+  /* Kiosk tablet: suppress the tap flash on every touch. */
+  -webkit-tap-highlight-color: transparent;
+}

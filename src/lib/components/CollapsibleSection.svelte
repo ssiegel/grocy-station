@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: © 2025 Tiago Sanona <tsanona@gmail.com>
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 <script lang="ts">
     import type { Snippet } from "svelte";
     import WhiteButton from "$lib/components/WhiteButton.svelte";
@@ -20,14 +25,15 @@
     }
 </script>
 
-<div class="flex flex-row gap-2 items-center justify-start">
-    <WhiteButton
-        onclick={onClick}
-        selected={expanded}
-        modifiers="self-stretch"
-        >
-        {header}
-    </WhiteButton>
+<div class="header">
+    <div class="stretch">
+        <WhiteButton
+            onclick={onClick}
+            selected={expanded}
+            >
+            {header}
+        </WhiteButton>
+    </div>
     {#if buttons}
         {#each buttons as button}
             {@render button()}
@@ -37,3 +43,18 @@
 <div hidden={!expanded}>
         {@render children()}
 </div>
+
+<style>
+    .header {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    /* Wrapper: scoped styles cannot reach the button inside WhiteButton. */
+    .stretch {
+        align-self: stretch;
+    }
+</style>

@@ -25,39 +25,39 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 {#snippet button()}
-    <WhiteButton 
-        hidden={productState.selectedStockLogEntryIndex === undefined}
-        disabled={productState.progress != 0}
-        modifiers="ml-auto self-stretch"
-        onclick={async () => productState.doUndo()}
-        label="Undo"
-        >
-        <svg class="self-stretch" inline-src="undo-fa" height=".5em" fill="currentColor" />
-    </WhiteButton>
+    <div class="undo">
+        <WhiteButton 
+            hidden={productState.selectedStockLogEntryIndex === undefined}
+            disabled={productState.progress != 0}
+            onclick={async () => productState.doUndo()}
+            label="Undo"
+            >
+            <svg inline-src="undo-fa" height=".5em" fill="currentColor" />
+        </WhiteButton>
+    </div>
 {/snippet}
 
 {#if stockLog.length > 0}
     <CollapsibleSection header={"Journal"} buttons={[button]} onclose={() => productState.selectedStockLogEntryIndex = undefined}>
-        <div
-            class="text-label-fg px-0 grid grid-cols-[max-content_max-content_max-content_max-content_1fr] gap-x-2 text-lg"
-        >
-        <div class="pl-2 justify-self-start">Transaction</div>
-        <div class="justify-self-start">Amt</div>
-        <div class="justify-self-start">Time</div>
+        <div class="grid">
+        <div class="indent align-start">Transaction</div>
+        <div class="align-start">Amt</div>
+        <div class="align-start">Time</div>
         {#each stockLog as entry, i (entry.id)}
             <div
                 style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
-                class="opacity-20 {i % 2 ? 'bg-shade-low' : 'bg-darken'}"
+                class="stripe"
+                class:odd={i % 2}
             ></div>
             <div
                 style="grid-area: {i * 2 + 2} / 1"
-                class="pl-2 justify-self-center whitespace-nowrap"
+                class="indent align-center nowrap"
             >
             {entry.transaction_type}
             </div>
             <div 
                 style="grid-area: {i * 2 + 2} / 2"
-                class="justify-self-center whitespace-nowrap"
+                class="align-center nowrap"
             >
                 {formatNumber(entry.amount, productData.product_details.quantity_unit_stock.id)}
             </div>
@@ -68,11 +68,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             </div>
             <div
                 style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
-                class="hover:bg-shade-default z-10 border-red-500 border-l-4 border-{
-                    productState.selectedStockLogEntryIndex === i
-                        ? 'solid'
-                        : 'none'
-                }"
+                class="target"
+                data-selected={productState.selectedStockLogEntryIndex === i}
                 use:pressaction
                 onlongpress={() => stockLogEntryPressed(i)}
                 onshortpress={() => stockLogEntryPressed(i)}
@@ -83,3 +80,64 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     </div>
     </CollapsibleSection>
 {/if}
+
+<style>
+    /* Wrapper: scoped styles cannot reach the button inside WhiteButton. */
+    .undo {
+        margin-left: auto;
+        align-self: stretch;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: max-content max-content max-content max-content 1fr;
+        column-gap: 0.5rem;
+        font-size: var(--text-lg);
+        line-height: var(--text-lg--line-height);
+        color: var(--color-label-fg);
+    }
+
+    .indent {
+        padding-left: 0.5rem;
+    }
+
+    .align-start {
+        justify-self: start;
+    }
+
+    .align-center {
+        justify-self: center;
+    }
+
+    .nowrap {
+        white-space: nowrap;
+    }
+
+    /* Zebra striping, drawn as a backdrop spanning the full row.
+     * Note the phase is inverted relative to the stock table. */
+    .stripe {
+        background-color: var(--color-darken);
+        opacity: 0.2;
+    }
+
+    .stripe.odd {
+        background-color: var(--color-shade-low);
+    }
+
+    /* Press target overlaying the row; the left border marks the selection. */
+    .target {
+        z-index: 10;
+        border-left: 4px none var(--color-red-500);
+    }
+
+    .target[data-selected="true"] {
+        border-left-style: solid;
+    }
+
+    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
+    @media (hover: hover) {
+        .target:hover {
+            background-color: var(--color-shade-default);
+        }
+    }
+</style>
