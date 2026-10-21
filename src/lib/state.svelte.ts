@@ -10,8 +10,19 @@ import {
   GrocyClient,
   GrocyObjectCache,
 } from "$lib/grocy";
-import type { GrocyData, GrocyProductGroup } from "$lib/types/grocy";
+import type {
+  GrocyData,
+  GrocyProductGroup,
+  GrocyShoppingList,
+  GrocyShoppingListEntry,
+} from "$lib/types/grocy";
 import { PackagingUnitsBuilder } from "$lib/packaging";
+
+/**
+ * Grocy's default shopping list. Its API substitutes this id wherever a
+ * list is omitted, and the list cannot be deleted.
+ */
+export const DEFAULT_SHOPPING_LIST_ID = 1;
 
 /**
  * The amount to preselect, in GrocyProduct.qu_id_stock units.
@@ -174,8 +185,12 @@ export class ProductState extends State {
 
   /** *Statefull* */
   public consumeValid = $state(false);
-  /** *Derived* */
-  public readonly addShoppingListValid: boolean;
+  /**
+   * Every shopping list, each paired with this product's item on it where
+   * there is one.
+   *
+   * *Derived* */
+  public readonly shoppingListEntries: GrocyShoppingListEntry[];
   /** *Statefull* */
   selectedStockEntryIndex: number = $state(0);
   /** *Statefull* */
@@ -216,10 +231,34 @@ export class ProductState extends State {
     this.inputQuantity = $state("1");
     this.inputUnitSize = $state(String(basePackagingUnitAmount(grocyData)));
     this.consumeAmount = $derived(this.unitSize() * this.quantity());
-    this.addShoppingListValid = $derived(
-      this.grocyData.shopping_list_items.filter((list) => !list.done)
-        .length === 0,
-    );
+    this.shoppingListEntries = $derived.by(() => {
+      // The cache is not reactive, so a miss here is not re-run when it is
+      // later filled. The lists are among those warmed at startup, which
+      // happens long before a scan can reach this.
+      const lists = (GrocyObjectCache.getCachedObject("shopping_lists") ??
+        []) as GrocyShoppingList[];
+      // A product can hold several items on one list, which Grocy's own UI
+      // also allows. Showing the first would understate the amount, so they
+      // are summed into one entry per list.
+      return lists.map((list) => {
+        const items = this.grocyData.shopping_list_items.filter(
+          (item) => item.shopping_list_id === list.id,
+        );
+        if (items.length === 0) {
+          return { list };
+        }
+        return {
+          list,
+          item: {
+            ...items[0],
+            amount: items.reduce((sum, item) => sum + item.amount, 0),
+            // Only wholly purchased entries read as done; a part-done list
+            // still has something outstanding on it.
+            done: items.every((item) => item.done) ? 1 : 0,
+          },
+        };
+      });
+    });
   }
 
   /** Returns currents state of ProductState.inputQuantity as numeric. */
@@ -428,28 +467,49 @@ export class ProductState extends State {
     await this.refresh();
   }
 
-  async doShoppingList() {
-    if (this.progress !== 0) return;
-    this.progress = 1;
-    // Not triggerShoppingListUpdate(): it makes the amount unpredictable
-    // when adding the same product again.
-    await this.updateShoppingListItems();
-    this.progress = 50;
+  /**
+   * Put the composed amount on a shopping list.
+   *
+   * Grocy folds the amount into an existing item for the product, so adding
+   * twice raises the amount rather than leaving two rows behind.
+   */
+  async addToShoppingList(listId: number) {
+    if (
+      !Number.isFinite(this.consumeAmount) || this.consumeAmount <= 0 ||
+      this.progress !== 0
+    ) return;
 
-    if (this.addShoppingListValid) {
-      await Promise.all(
-        this.grocyData.shopping_list_items.map((doneShoppingListItem) =>
-          GrocyClient.postRemoveProductShopping(
-            doneShoppingListItem.product_id,
-            doneShoppingListItem.amount,
-            doneShoppingListItem.shopping_list_id,
-          )
-        ),
-      );
-      this.progress = 75;
-      await GrocyClient.postAddToShoppingList(this.productId);
-    }
+    this.progress = 1;
+    await GrocyClient.postAddProductToShoppingList(
+      this.productId,
+      this.consumeAmount,
+      listId,
+    );
     this.resetQuantity();
+    await this.refresh();
+  }
+
+  /**
+   * Take the product off a shopping list entirely.
+   *
+   * Removal is not the inverse of adding: it clears the item rather than
+   * deducting the composed amount. Whoever took it off the list is saying
+   * they no longer want it, which is not a statement about a quantity.
+   */
+  async removeFromShoppingList(listId: number) {
+    if (this.progress !== 0) return;
+
+    const entry = this.shoppingListEntries.find(
+      (candidate) => candidate.list.id === listId,
+    );
+    if (entry?.item === undefined) return;
+
+    this.progress = 1;
+    await GrocyClient.postRemoveProductShopping(
+      this.productId,
+      entry.item.amount,
+      listId,
+    );
     await this.refresh();
   }
 

@@ -6,7 +6,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <script lang="ts">
     import { formatUnit, formatNumber } from "$lib/format";
-    import { type ProductState } from "$lib/state.svelte";
+    import {
+        DEFAULT_SHOPPING_LIST_ID,
+        type ProductState,
+    } from "$lib/state.svelte";
     import Stock from "$lib/components/Stock.svelte";
     import StockJournal from "$lib/components/StockJournal.svelte";
     import ActionButton from "$lib/components/ActionButton.svelte";
@@ -107,8 +110,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         {/if}
         <div class="action push-right">
             <ActionButton 
-                disabled={!productState.addShoppingListValid || productState.progress != 0}
-                onclick={async () => productState.doShoppingList()}
+                disabled={!productState.consumeValid || productState.progress != 0}
+                onclick={async () => productState.addToShoppingList(DEFAULT_SHOPPING_LIST_ID)}
                 label="Enlist"
                 >
                 <svg inline-src="shoppinglist-fa" height="1.5em" fill="currentColor" />
