@@ -15,8 +15,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     const productData = $derived(productState.grocyData);
     const stockLog = $derived(productData.stock_log);
 
-    let journalExpanded = $state(false);
-
     function stockLogEntryPressed(stockLogEntryId: number) {
         if (productState.selectedStockLogEntryIndex === stockLogEntryId) {
             productState.selectedStockLogEntryIndex = undefined
@@ -40,7 +38,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 {#if stockLog.length > 0}
     <CollapsibleSection
         title="Journal"
-        bind:expanded={journalExpanded}
+        bind:expanded={productState.journalExpanded}
         {actions}
         onclose={() => productState.selectedStockLogEntryIndex = undefined}
     >

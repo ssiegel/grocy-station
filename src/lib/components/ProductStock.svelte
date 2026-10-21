@@ -114,24 +114,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <svg inline-src="shoppinglist-fa" height="1.5em" fill="currentColor" />
             </ActionButton>    
         </div>
-        <div class="action">
-            <ActionButton 
-                disabled={!productState.consumeValid || productState.progress != 0}
-                onclick={async () => productState.doConsume(true)}
-                label="Open"
-                >
-                <svg inline-src="open" height="1.5em" fill="currentColor" />
-            </ActionButton>
-        </div>
-        <div class="action">
-            <ActionButton 
-                disabled={!productState.consumeValid || productState.progress != 0}
-                onclick={async () => productState.doConsume(false)}
-                label="Consume"
-                >
-                <svg inline-src="consume" height="1.5em" fill="currentColor" />
-            </ActionButton>
-        </div>
     </div>
     <Stock {productState} />
     <StockJournal {productState} />

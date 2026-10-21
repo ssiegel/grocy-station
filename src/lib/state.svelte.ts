@@ -181,6 +181,19 @@ export class ProductState extends State {
   /** *Statefull* */
   selectedStockLogEntryIndex = $state(undefined as number | undefined);
 
+  /** Which sections are expanded. Lives here so that a scan starts every
+   * product from the same view rather than inheriting the last one's.
+   *
+   * *Statefull* */
+  stockExpanded = $state(true);
+  /** *Statefull* */
+  shoppingListExpanded = $state(true);
+  /** The journal is the only one collapsed by default: it is a record of
+   * what already happened, not something to act on.
+   *
+   * *Statefull* */
+  journalExpanded = $state(false);
+
   private refreshing?: Promise<void>;
   private refreshQueued = false;
   /**

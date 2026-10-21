@@ -10,10 +10,36 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { GrocyObjectCache } from "$lib/grocy";
     import type { GrocyStockEntry } from "$lib/types/grocy";
     import { ProductState } from "$lib/state.svelte";
+    import ActionButton from "$lib/components/ActionButton.svelte";
+    import CollapsibleSection from "$lib/components/CollapsibleSection.svelte";
 
     let { productState }: { productState: ProductState } = $props();
     const productData = $derived(productState.grocyData);
     const productDetails = $derived(productData.product_details);
+
+    const stockUnitId = $derived(productDetails.quantity_unit_stock.id);
+
+    // Stands in for the table while it is collapsed, so the amount in stock
+    // stays visible without it.
+    const summary = $derived.by(() => {
+        if (!productDetails.stock_amount) {
+            // Entries without a stock amount leave nothing worth previewing,
+            // so the header shows the title alone.
+            return productData.stock.length ? undefined : "Not in stock";
+        }
+        const parts = [
+            formatNumber(productDetails.stock_amount, stockUnitId),
+            `${productData.stock.length} ${
+                productData.stock.length === 1 ? "entry" : "entries"
+            }`,
+        ];
+        if (productDetails.stock_amount_opened) {
+            parts.push(
+                `${formatNumber(productDetails.stock_amount_opened)} opened`,
+            );
+        }
+        return parts.join(" · ");
+    });
 
     function stockEntryPressed(entryIndex: number) {
         productState.selectedStockEntryIndex = entryIndex;
@@ -25,23 +51,30 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 </script>
 
+{#snippet actions()}
+    <ActionButton
+        disabled={!productState.consumeValid || productState.progress != 0}
+        onclick={async () => productState.doConsume(true)}
+        label="Open"
+    >
+        <svg inline-src="open" height="1.5em" fill="currentColor" />
+    </ActionButton>
+    <ActionButton
+        disabled={!productState.consumeValid || productState.progress != 0}
+        onclick={async () => productState.doConsume(false)}
+        label="Consume"
+    >
+        <svg inline-src="consume" height="1.5em" fill="currentColor" />
+    </ActionButton>
+{/snippet}
+
 {#if productData.stock !== undefined || productDetails !== undefined}
-    <div class="header">
-        {#if productDetails.stock_amount}
-            Stock amount: {formatNumber(
-                productDetails.stock_amount,
-                productDetails.quantity_unit_stock.id,
-            )}
-            {#if productDetails.stock_amount_opened}({formatNumber(
-                    productDetails.stock_amount_opened,
-                )} opened)
-            {/if}
-        {:else if productData.stock.length}
-            Stock
-        {:else}
-            Not in stock
-        {/if}
-    </div>
+    <CollapsibleSection
+        title="Stock"
+        {summary}
+        bind:expanded={productState.stockExpanded}
+        actions={productState.stockExpanded ? actions : undefined}
+    >
     {#if productData.stock.length}
         <div class="grid">
             <div class="indent align-end">Qty</div>
@@ -113,14 +146,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 ></div>
             {/each}
         </div>
+    {:else}
+        <div class="empty">Not in stock</div>
     {/if}
+    </CollapsibleSection>
 {/if}
 
 <style>
-    .header {
+    .empty {
         padding: 0.25rem 0.5rem;
-        color: var(--color-container-fg);
-        background-color: var(--color-container-bg-default);
+        font-style: italic;
     }
 
     .grid {
