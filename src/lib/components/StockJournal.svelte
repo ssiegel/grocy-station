@@ -15,6 +15,23 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     const productData = $derived(productState.grocyData);
     const stockLog = $derived(productData.stock_log);
 
+    // Stands in for the table while it is collapsed. The log is fetched
+    // newest first, so the latest transaction is the leading entry.
+    const summary = $derived.by(() => {
+        const latest = stockLog[0];
+        if (latest === undefined) {
+            return undefined;
+        }
+        return `${stockLog.length} ${
+            stockLog.length === 1 ? "entry" : "entries"
+        } · last: ${latest.transaction_type} ${
+            formatNumber(
+                latest.amount,
+                productData.product_details.quantity_unit_stock.id,
+            )
+        }`;
+    });
+
     function stockLogEntryPressed(stockLogEntryId: number) {
         if (productState.selectedStockLogEntryIndex === stockLogEntryId) {
             productState.selectedStockLogEntryIndex = undefined
@@ -26,20 +43,26 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 {#snippet actions()}
     <ActionButton
-        hidden={productState.selectedStockLogEntryIndex === undefined}
+        subtle
         disabled={productState.progress != 0}
         onclick={async () => productState.doUndo()}
         label="Undo"
         >
-        <svg inline-src="undo-fa" height=".5em" fill="currentColor" />
+        <svg inline-src="undo-fa" height="0.75em" fill="currentColor" />
     </ActionButton>
 {/snippet}
 
 {#if stockLog.length > 0}
     <CollapsibleSection
         title="Journal"
+        {summary}
         bind:expanded={productState.journalExpanded}
-        {actions}
+        actions={
+            productState.journalExpanded &&
+            productState.selectedStockLogEntryIndex !== undefined
+                ? actions
+                : undefined
+        }
         onclose={() => productState.selectedStockLogEntryIndex = undefined}
     >
         <div class="grid">

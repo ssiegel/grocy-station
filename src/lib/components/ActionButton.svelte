@@ -19,6 +19,12 @@ quiet enough that a screenful of them does not shout.
         label: string;
         disabled?: boolean;
         hidden?: boolean;
+        /**
+         * Quieter, smaller variant for an action that corrects or annotates
+         * rather than advances: it should not read as a peer of the actions
+         * that commit something.
+         */
+        subtle?: boolean;
     }
 
     let {
@@ -27,10 +33,12 @@ quiet enough that a screenful of them does not shout.
         label,
         disabled = false,
         hidden = false,
+        subtle = false,
     }: Props = $props();
 </script>
 
 <button
+    class:subtle
     {disabled}
     {hidden}
     {onclick}
@@ -64,6 +72,14 @@ quiet enough that a screenful of them does not shout.
 
     button:active {
         background-color: var(--color-shade-high);
+    }
+
+    .subtle {
+        height: auto;
+        padding: 0.25rem 0.75rem;
+        border-width: 1px;
+        font-size: var(--text-xl);
+        line-height: var(--text-xl--line-height);
     }
 
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
