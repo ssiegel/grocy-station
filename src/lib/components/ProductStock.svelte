@@ -6,13 +6,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <script lang="ts">
     import { formatUnit, formatNumber } from "$lib/format";
-    import {
-        DEFAULT_SHOPPING_LIST_ID,
-        type ProductState,
-    } from "$lib/state.svelte";
+    import { type ProductState } from "$lib/state.svelte";
     import Stock from "$lib/components/Stock.svelte";
     import StockJournal from "$lib/components/StockJournal.svelte";
-    import ActionButton from "$lib/components/ActionButton.svelte";
+    import ShoppingList from "$lib/components/ShoppingList.svelte";
     import SegmentedControl from "$lib/components/SegmentedControl.svelte";
 
     let { pageState: productState }: { pageState: ProductState } = $props();
@@ -108,17 +105,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 >
             </div>
         {/if}
-        <div class="action push-right">
-            <ActionButton 
-                disabled={!productState.consumeValid || productState.progress != 0}
-                onclick={async () => productState.addToShoppingList(DEFAULT_SHOPPING_LIST_ID)}
-                label="Enlist"
-                >
-                <svg inline-src="shoppinglist-fa" height="1.5em" fill="currentColor" />
-            </ActionButton>    
-        </div>
     </div>
     <Stock {productState} />
+    <ShoppingList {productState} />
     <StockJournal {productState} />
 </div>
 
@@ -214,15 +203,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
     .stepper button:active {
         background-color: var(--color-input-bg-active);
-    }
-
-    /* Wrappers: scoped styles cannot reach the button inside ActionButton. */
-    .action {
-        align-self: stretch;
-    }
-
-    .push-right {
-        margin-left: auto;
     }
 
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
