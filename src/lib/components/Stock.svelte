@@ -66,6 +66,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     >
         <svg inline-src="consume" height="1.5em" fill="currentColor" />
     </ActionButton>
+    <ActionButton
+        danger
+        disabled={!productState.consumeValid || productState.progress != 0}
+        onclick={async () => productState.doConsume(false, true)}
+        label="Consume as spoiled"
+    >
+        Spoiled
+    </ActionButton>
 {/snippet}
 
 {#if productData.stock !== undefined || productDetails !== undefined}

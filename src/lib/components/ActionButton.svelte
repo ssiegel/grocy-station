@@ -25,6 +25,11 @@ quiet enough that a screenful of them does not shout.
          * that commit something.
          */
         subtle?: boolean;
+        /**
+         * Destructive variant. Tinted, and `subtle` besides, so that it
+         * cannot be hit by muscle memory aimed at the action beside it.
+         */
+        danger?: boolean;
     }
 
     let {
@@ -34,11 +39,13 @@ quiet enough that a screenful of them does not shout.
         disabled = false,
         hidden = false,
         subtle = false,
+        danger = false,
     }: Props = $props();
 </script>
 
 <button
-    class:subtle
+    class:subtle={subtle || danger}
+    class:danger
     {disabled}
     {hidden}
     {onclick}
@@ -80,6 +87,14 @@ quiet enough that a screenful of them does not shout.
         border-width: 1px;
         font-size: var(--text-xl);
         line-height: var(--text-xl--line-height);
+    }
+
+    .danger {
+        color: var(--color-red-400);
+    }
+
+    .danger:disabled {
+        color: var(--color-shade-high);
     }
 
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */

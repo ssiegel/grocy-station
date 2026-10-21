@@ -369,7 +369,14 @@ export class ProductState extends State {
     this.reAllot();
   }
 
-  async doConsume(open: boolean) {
+  /**
+   * Book the composed amount out of stock, oldest allotted entry first.
+   *
+   * `open` marks the entries as opened instead of removing them; `spoiled`
+   * records the removal as waste rather than use. The two are mutually
+   * exclusive, since opening something does not spoil it.
+   */
+  async doConsume(open: boolean, spoiled = false) {
     if (
       this.grocyData.stock === undefined ||
       !this.consumeValid || this.progress !== 0
@@ -405,6 +412,7 @@ export class ProductState extends State {
           entry.stock_id!,
           entry.amount_allotted,
           open,
+          spoiled,
         ).then(() => {
           this.progress = Math.max(
             1,

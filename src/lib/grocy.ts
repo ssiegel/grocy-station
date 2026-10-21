@@ -170,6 +170,7 @@ export class GrocyClient {
     stock_id: string,
     amount_allotted: number,
     open: boolean,
+    spoiled = false,
   ) {
     return await this.BASE_CLIENT.POST(
       `/stock/products/{productId}/${open ? "open" : "consume"}`,
@@ -180,6 +181,9 @@ export class GrocyClient {
         body: {
           amount: amount_allotted,
           stock_entry_id: stock_id,
+          // Opening cannot spoil anything, and the open endpoint has no
+          // such field; sending it there would be meaningless.
+          ...(open ? {} : { spoiled: spoiled }),
         },
         signal: abortTimeoutSignal(),
       },
