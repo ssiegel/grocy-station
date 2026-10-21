@@ -10,10 +10,23 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import Stock from "$lib/components/Stock.svelte";
     import StockJournal from "$lib/components/StockJournal.svelte";
     import ActionButton from "$lib/components/ActionButton.svelte";
+    import SegmentedControl from "$lib/components/SegmentedControl.svelte";
 
     let { pageState: productState }: { pageState: ProductState } = $props();
     const productData = $derived(productState.grocyData);
     const productDetails = $derived(productData.product_details)
+    const packagingUnits = $derived(productData.packaging_units);
+
+    // The unit size is a free-text field, so the selection follows the
+    // amount rather than the other way round: typing an amount by hand
+    // highlights the matching unit, and typing one that belongs to no unit
+    // highlights nothing. Units sharing an amount cannot be told apart this
+    // way, so the first of them stands in for the rest.
+    const selectedPackagingUnitIndex = $derived(
+        packagingUnits.units.findIndex(
+            (pu) => pu.amount === productState.unitSize(),
+        ),
+    );
 </script>
 
 <div class="titlebar">
@@ -32,18 +45,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <span class="note">{productData.barcode.note}</span>
         </div>
     {/if}
-    <div class="packaging-units">
-        {#each productData.packaging_units.units as pu}
-            <ActionButton
-                onclick={() => (productState.inputUnitSize = String(pu.amount))}
-                selected={productState.unitSize() === pu.amount}
-                >
-                {pu.name}
-                <br />
-                {pu.amount_display}
-            </ActionButton>
-        {/each}
-    </div>
+    <SegmentedControl
+        options={packagingUnits.units.map((pu) => ({
+            label: pu.name,
+            sublabel: pu.amount_display,
+        }))}
+        selectedIndex={selectedPackagingUnitIndex}
+        defaultIndex={packagingUnits.baseIndex}
+        onselect={(i) =>
+            (productState.inputUnitSize = String(packagingUnits.units[i].amount))}
+    />
     <div class="amount-row">
         <div>
             <label>
@@ -161,14 +172,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
     .note {
         font-style: italic;
-    }
-
-    .packaging-units {
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        align-items: stretch;
-        justify-content: flex-start;
     }
 
     .amount-row {

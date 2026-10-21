@@ -70,6 +70,13 @@
   --color-input-fg: var(--color-primary-default);
 
   --color-label-fg: var(--color-shade-highest);
+
+  /* Hairline between the cells of a segmented control. Lighter than a
+   * border: the cells sit inside one shared outline. */
+  --color-separator: hsla(230, 7%, 75%, 0.3);
+  /* Marker dot on a selected (light) cell. Dark, since it sits on the
+   * button palette rather than on the body. */
+  --color-marker-on-selected: hsla(230, 7%, 0%, 0.45);
 }
 
 /* Reset, deliberately scoped to the elements this app actually renders
