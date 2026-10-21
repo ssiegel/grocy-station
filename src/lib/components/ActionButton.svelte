@@ -4,55 +4,43 @@ SPDX-FileCopyrightText: © 2026 Stefan Siegel <ssiegel@sdas.net>
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
+<!--
+A one-shot operation. Reads as "operate this": an outline over the body,
+quiet enough that a screenful of them does not shout.
+-->
+
 <script lang="ts">
     import type { Snippet } from "svelte";
 
-    type ButtonInput = {
+    interface Props {
         children: Snippet;
         onclick: () => void;
-        hidden?: boolean;
-    };
-
-    type ActionButtonInput = ButtonInput & {
-        disabled: boolean;
+        /** Names the action, which is otherwise carried only by an icon. */
         label: string;
-    };
+        disabled?: boolean;
+        hidden?: boolean;
+    }
 
-    type SelectButtonInput = ButtonInput & {
-        selected: boolean;
-    };
-
-    type Props = ActionButtonInput | SelectButtonInput;
-
-    let props: Props = $props();
-
-    const selected = $derived("selected" in props ? props.selected : undefined);
-    const isActionButton = $derived(
-        "disabled" in props || ("label" in props && selected === undefined),
-    );
+    let {
+        children,
+        onclick,
+        label,
+        disabled = false,
+        hidden = false,
+    }: Props = $props();
 </script>
 
 <button
-    class:action={isActionButton}
-    class:select={!isActionButton}
-    class:selected={!isActionButton && selected}
-    disabled={"disabled" in props ? props.disabled : undefined}
-    aria-label={"label" in props ? props.label : undefined}
-    hidden={props.hidden ?? false}
-    onclick={props.onclick}
+    {disabled}
+    {hidden}
+    {onclick}
+    aria-label={label}
 >
-    {@render props.children()}
+    {@render children()}
 </button>
 
 <style>
     button {
-        border-radius: 0.25rem;
-    }
-
-    /* Action buttons carry the icon actions; they fill their wrapper.
-     * They read as "operate this": an outline over the body rather than a
-     * solid keycap, so a screen full of them stays quiet. */
-    .action {
         display: inline-flex;
         gap: 0.5rem;
         align-items: center;
@@ -60,67 +48,28 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         height: 100%;
         padding: 0.75rem 1rem;
         border: 2px solid var(--color-primary-dark);
+        border-radius: 0.25rem;
         color: var(--color-primary-lighter);
         background-color: transparent;
     }
 
-    .action:disabled {
+    button:disabled {
         border-color: var(--color-shade-default);
         color: var(--color-shade-high);
     }
 
-    .action:focus {
+    button:focus {
         background-color: var(--color-shade-default);
     }
 
-    .action:active {
+    button:active {
         background-color: var(--color-shade-high);
-    }
-
-    /* Select buttons toggle between the input and the button palette. */
-    .select {
-        padding: 0.25rem 0.5rem;
-        border: 2px solid var(--color-btn-bg-default);
-        color: var(--color-input-fg);
-        background-color: var(--color-input-bg-default);
-    }
-
-    .select:focus {
-        border-color: var(--color-btn-bg-focus);
-        background-color: var(--color-input-bg-focus);
-    }
-
-    .select:active {
-        border-color: var(--color-btn-bg-active);
-        background-color: var(--color-input-bg-active);
-    }
-
-    .select.selected {
-        color: var(--color-btn-fg);
-        background-color: var(--color-btn-bg-default);
-    }
-
-    .select.selected:focus {
-        background-color: var(--color-btn-bg-focus);
-    }
-
-    .select.selected:active {
-        background-color: var(--color-btn-bg-active);
     }
 
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
     @media (hover: hover) {
-        .action:not(:disabled):hover {
+        button:not(:disabled):hover {
             background-color: var(--color-shade-default);
-        }
-
-        .select:hover {
-            border-color: var(--color-btn-bg-hover);
-            background-color: var(--color-input-bg-hover);
-        }
-
-        .select.selected:hover {
-            background-color: var(--color-btn-bg-hover);
         }
     }
 </style>

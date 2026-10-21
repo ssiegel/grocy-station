@@ -15,6 +15,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     const productData = $derived(productState.grocyData);
     const stockLog = $derived(productData.stock_log);
 
+    let journalExpanded = $state(false);
+
     function stockLogEntryPressed(stockLogEntryId: number) {
         if (productState.selectedStockLogEntryIndex === stockLogEntryId) {
             productState.selectedStockLogEntryIndex = undefined
@@ -24,21 +26,24 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 </script>
 
-{#snippet button()}
-    <div class="undo">
-        <ActionButton 
-            hidden={productState.selectedStockLogEntryIndex === undefined}
-            disabled={productState.progress != 0}
-            onclick={async () => productState.doUndo()}
-            label="Undo"
-            >
-            <svg inline-src="undo-fa" height=".5em" fill="currentColor" />
-        </ActionButton>
-    </div>
+{#snippet actions()}
+    <ActionButton
+        hidden={productState.selectedStockLogEntryIndex === undefined}
+        disabled={productState.progress != 0}
+        onclick={async () => productState.doUndo()}
+        label="Undo"
+        >
+        <svg inline-src="undo-fa" height=".5em" fill="currentColor" />
+    </ActionButton>
 {/snippet}
 
 {#if stockLog.length > 0}
-    <CollapsibleSection header={"Journal"} buttons={[button]} onclose={() => productState.selectedStockLogEntryIndex = undefined}>
+    <CollapsibleSection
+        title="Journal"
+        bind:expanded={journalExpanded}
+        {actions}
+        onclose={() => productState.selectedStockLogEntryIndex = undefined}
+    >
         <div class="grid">
         <div class="indent align-start">Transaction</div>
         <div class="align-start">Amt</div>
@@ -82,12 +87,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 {/if}
 
 <style>
-    /* Wrapper: scoped styles cannot reach the button inside ActionButton. */
-    .undo {
-        margin-left: auto;
-        align-self: stretch;
-    }
-
     .grid {
         display: grid;
         grid-template-columns: max-content max-content max-content max-content 1fr;
