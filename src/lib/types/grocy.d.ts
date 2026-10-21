@@ -70,6 +70,13 @@ export type GrocyShoppingList = {
   name: string;
 };
 
+/** A shopping list, paired with the product's item on it if there is one. */
+export type GrocyShoppingListEntry = {
+  list: GrocyShoppingList;
+  /** Absent when the product is not on this list. */
+  item?: GrocyShoppingListItem;
+};
+
 /** Product purchasing or consumption packaging units.
  *
  * eg.: A *Box* of cerial contains x *Bags* of cerial.

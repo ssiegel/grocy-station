@@ -165,6 +165,31 @@ export class GrocyClient {
     });
   }
 
+  /**
+   * Add to a shopping list, folding into an existing item for the product
+   * if the list already holds one.
+   *
+   * `product_amount` is in the product's stock quantity unit, and must be
+   * given: this endpoint silently substitutes 1 for an absent amount.
+   */
+  public static async postAddProductToShoppingList(
+    product_id: number,
+    product_amount: number,
+    list_id?: number,
+  ) {
+    return await this.BASE_CLIENT.POST(
+      `/stock/shoppinglist/add-product`,
+      {
+        body: {
+          product_id: product_id,
+          list_id: list_id,
+          product_amount: product_amount,
+        },
+        signal: abortTimeoutSignal(),
+      },
+    );
+  }
+
   public static async postConsume(
     product_id: number,
     stock_id: string,
@@ -347,19 +372,11 @@ export async function fetchProductStockLogs(
   ], "row_created_timestamp:desc") as GrocyStockLogEntry[];
 }
 
+/** The product's items across every shopping list. */
 export async function fetchProductShoppingListItems(
   productId: number,
 ): Promise<GrocyShoppingListItem[]> {
-  let shoppingListItems = await GrocyClient.getShoppingListItems(productId);
-  if (!shoppingListItems) {
-    const shoppingLists = await GrocyObjectCache.getObject(
-      "shopping_lists",
-    ) as GrocyShoppingListItem[];
-    shoppingListItems = await (Promise.all(
-      shoppingLists.filter((shoppingList) => shoppingList.id !== 1).map((
-        shoppingList,
-      ) => GrocyClient.getShoppingListItems(productId, shoppingList.id)),
-    )).then((lists) => lists.flat());
-  }
-  return shoppingListItems;
+  // Omitting the list filter already spans every list, so there is no need
+  // to query them one at a time.
+  return await GrocyClient.getShoppingListItems(productId);
 }
