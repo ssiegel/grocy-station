@@ -13,6 +13,18 @@ import {
 import type { GrocyData, GrocyProductGroup } from "$lib/types/grocy";
 import { PackagingUnitsBuilder } from "$lib/packaging";
 
+/**
+ * The amount to preselect, in GrocyProduct.qu_id_stock units.
+ *
+ * The units are ordered by amount, so the base unit is not generally the
+ * first one; it is the one `baseIndex` points at. The list always holds at
+ * least the "Quick C" unit, so the lookup cannot come up empty.
+ */
+function basePackagingUnitAmount(grocyData: GrocyData): number {
+  const { units, baseIndex } = grocyData.packaging_units;
+  return units[baseIndex].amount;
+}
+
 export abstract class State {
   /**
    * Has effect:
@@ -189,11 +201,7 @@ export class ProductState extends State {
     // product_details.product.id is fetched based on barcode.product_id
     this.productId = $derived(grocyData.barcode.product_id);
     this.inputQuantity = $state("1");
-    // grocyData.packaging_units shouldn't be null
-    // contains at least the "Quick C" pu.
-    // inputUnitSize is set to amount of base pu at
-    // index zero in GrocyProduct.qu_id_stock units .
-    this.inputUnitSize = $state(String(grocyData.packaging_units![0].amount));
+    this.inputUnitSize = $state(String(basePackagingUnitAmount(grocyData)));
     this.consumeAmount = $derived(this.unitSize() * this.quantity());
     this.addShoppingListValid = $derived(
       this.grocyData.shopping_list_items.filter((list) => !list.done)
@@ -241,7 +249,7 @@ export class ProductState extends State {
 
   resetQuantity() {
     this.inputQuantity = "1";
-    this.inputUnitSize = String(this.grocyData.packaging_units![0].amount);
+    this.inputUnitSize = String(basePackagingUnitAmount(this.grocyData));
     this.selectedStockEntryIndex = 0;
     this.reAllot();
   }

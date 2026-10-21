@@ -83,12 +83,17 @@ export type GrocyPackagingUnit = {
   /** Packaging unit amount formated for display */
   amount_display: string;
 };
+
+/** A product's packaging units together with the one to preselect. */
+export type GrocyPackagingUnits = {
+  /** In increasing order of PackagingUnit.amount. */
+  units: GrocyPackagingUnit[];
+  /** Index into `units` of the base unit, i.e. the default selection. */
+  baseIndex: number;
+};
 export type GrocyData = {
   barcode: GrocyBarcode;
-  /** In increasing order of PackagingUnit.amount
-   * with the default consume *Packaging Unit* at index 0.
-   */
-  packaging_units: GrocyPackagingUnit[];
+  packaging_units: GrocyPackagingUnits;
   product_details: GrocyProductDetails;
   product_group: GrocyProductGroup;
   stock: GrocyStockEntry[];

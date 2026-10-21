@@ -33,7 +33,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         </div>
     {/if}
     <div class="packaging-units">
-        {#each productData.packaging_units as pu}
+        {#each productData.packaging_units.units as pu}
             <ActionButton
                 onclick={() => (productState.inputUnitSize = String(pu.amount))}
                 selected={productState.unitSize() === pu.amount}

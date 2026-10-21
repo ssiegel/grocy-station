@@ -7,18 +7,22 @@ import { GrocyClient } from "$lib/grocy";
 import type {
   GrocyBarcode,
   GrocyPackagingUnit,
+  GrocyPackagingUnits,
   GrocyProductDetails,
 } from "$lib/types/grocy";
 import { formatNumber } from "$lib/format";
 
-class PackagingUnits extends Array<GrocyPackagingUnit> {
-  basePuSizeStockUnits: number;
-
-  constructor(grocyPackagingUnits: GrocyPackagingUnit[], basePuIndex?: number) {
-    super(...grocyPackagingUnits);
-    this.basePuSizeStockUnits =
-      grocyPackagingUnits[basePuIndex ? basePuIndex : 0].amount;
-  }
+/**
+ * Order the units by ascending amount and locate the base unit within them,
+ * by object identity rather than amount since two units may share one.
+ */
+function orderPackagingUnits(
+  units: GrocyPackagingUnit[],
+  baseUnit: GrocyPackagingUnit,
+): GrocyPackagingUnits {
+  // Stable, so units of equal amount keep the order they were declared in.
+  const ordered = [...units].sort((a, b) => a.amount - b.amount);
+  return { units: ordered, baseIndex: ordered.indexOf(baseUnit) };
 }
 
 type QutoStockQuConversionFactorMap = Map<number, number>;
@@ -75,7 +79,7 @@ export class PackagingUnitsBuilder {
 
   private buildBarcodePackagingUnits(
     quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
-  ): PackagingUnits | undefined {
+  ): GrocyPackagingUnits | undefined {
     if (this.barcode.amount == null || this.barcode.qu_id == null) {
       return undefined;
     }
@@ -83,16 +87,15 @@ export class PackagingUnitsBuilder {
       quStockquConversionFactorMap.get(this.barcode.qu_id)!;
 
     // get pu from barcode qu
-    const pus = new PackagingUnits(
-      [{
-        name: "Barcode PU",
-        amount_display: formatNumber(
-          this.barcode.amount,
-          this.barcode.qu_id,
-        ),
-        amount: barcodeAmountStockUnits,
-      }],
-    );
+    const basePu = {
+      name: "Barcode PU",
+      amount_display: formatNumber(
+        this.barcode.amount,
+        this.barcode.qu_id,
+      ),
+      amount: barcodeAmountStockUnits,
+    };
+    const pus = [basePu];
 
     // get pu from barcode userfields
     for (
@@ -106,7 +109,7 @@ export class PackagingUnitsBuilder {
       }
       const factor = Number(match[1]) / Number(match[2] ?? 1);
       if (factor === 1) {
-        pus[0].name = match[3];
+        basePu.name = match[3];
       } else {
         pus.push({
           name: match[3],
@@ -118,12 +121,12 @@ export class PackagingUnitsBuilder {
         });
       }
     }
-    return pus;
+    return orderPackagingUnits(pus, basePu);
   }
 
   private buildProductDetailsPackagingUnits(
     quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
-  ): PackagingUnits {
+  ): GrocyPackagingUnits {
     const quickCAmount = this.productDetails.product.quick_consume_amount;
     const quicksimplePus = [
       {
@@ -142,24 +145,24 @@ export class PackagingUnitsBuilder {
       );
     }
 
-    const quickPus = quicksimplePus.map(
-      (simplePu) =>
-        Object({
-          name: simplePu.name,
-          amount_display: formatNumber(
-            simplePu.amount /
-              quStockquConversionFactorMap.get(
-                this.productDetails.product.qu_id_consume,
-              )!,
-            this.productDetails.product.qu_id_consume,
-          ),
-          amount: simplePu.amount,
-        }),
+    const quickPus: GrocyPackagingUnit[] = quicksimplePus.map(
+      (simplePu) => ({
+        name: simplePu.name,
+        amount_display: formatNumber(
+          simplePu.amount /
+            quStockquConversionFactorMap.get(
+              this.productDetails.product.qu_id_consume,
+            )!,
+          this.productDetails.product.qu_id_consume,
+        ),
+        amount: simplePu.amount,
+      }),
     );
-    return new PackagingUnits(quickPus);
+    // "Quick C" is the consume default, so it is the base unit.
+    return orderPackagingUnits(quickPus, quickPus[0]);
   }
 
-  async build(): Promise<PackagingUnits> {
+  async build(): Promise<GrocyPackagingUnits> {
     const quStockquConversionFactorMap = await this
       .quStockquConversionFactorMapPromise;
     let pus = this.buildBarcodePackagingUnits(quStockquConversionFactorMap);
