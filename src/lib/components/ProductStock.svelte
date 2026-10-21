@@ -9,7 +9,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { type ProductState } from "$lib/state.svelte";
     import Stock from "$lib/components/Stock.svelte";
     import StockJournal from "$lib/components/StockJournal.svelte";
-    import WhiteButton from "$lib/components/WhiteButton.svelte";
+    import ActionButton from "$lib/components/ActionButton.svelte";
 
     let { pageState: productState }: { pageState: ProductState } = $props();
     const productData = $derived(productState.grocyData);
@@ -34,14 +34,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     {/if}
     <div class="packaging-units">
         {#each productData.packaging_units as pu}
-            <WhiteButton
+            <ActionButton
                 onclick={() => (productState.inputUnitSize = String(pu.amount))}
                 selected={productState.unitSize() === pu.amount}
                 >
                 {pu.name}
                 <br />
                 {pu.amount_display}
-            </WhiteButton>
+            </ActionButton>
         {/each}
     </div>
     <div class="amount-row">
@@ -95,31 +95,31 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             </div>
         {/if}
         <div class="action push-right">
-            <WhiteButton 
+            <ActionButton 
                 disabled={!productState.addShoppingListValid || productState.progress != 0}
                 onclick={async () => productState.doShoppingList()}
                 label="Enlist"
                 >
                 <svg inline-src="shoppinglist-fa" height="1.5em" fill="currentColor" />
-            </WhiteButton>    
+            </ActionButton>    
         </div>
         <div class="action">
-            <WhiteButton 
+            <ActionButton 
                 disabled={!productState.consumeValid || productState.progress != 0}
                 onclick={async () => productState.doConsume(true)}
                 label="Open"
                 >
                 <svg inline-src="open" height="1.5em" fill="currentColor" />
-            </WhiteButton>
+            </ActionButton>
         </div>
         <div class="action">
-            <WhiteButton 
+            <ActionButton 
                 disabled={!productState.consumeValid || productState.progress != 0}
                 onclick={async () => productState.doConsume(false)}
                 label="Consume"
                 >
                 <svg inline-src="consume" height="1.5em" fill="currentColor" />
-            </WhiteButton>
+            </ActionButton>
         </div>
     </div>
     <Stock {productState} />
@@ -228,7 +228,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         background-color: var(--color-input-bg-active);
     }
 
-    /* Wrappers: scoped styles cannot reach the button inside WhiteButton. */
+    /* Wrappers: scoped styles cannot reach the button inside ActionButton. */
     .action {
         align-self: stretch;
     }

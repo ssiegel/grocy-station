@@ -8,7 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { formatDate, formatNumber } from "$lib/format";
     import { pressaction } from "$lib/pressaction.svelte";
     import type { ProductState } from "$lib/state.svelte";
-    import WhiteButton from '$lib/components/WhiteButton.svelte';
+    import ActionButton from '$lib/components/ActionButton.svelte';
 
     let { productState: productState }: { productState: ProductState } = $props();
 
@@ -26,14 +26,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 {#snippet button()}
     <div class="undo">
-        <WhiteButton 
+        <ActionButton 
             hidden={productState.selectedStockLogEntryIndex === undefined}
             disabled={productState.progress != 0}
             onclick={async () => productState.doUndo()}
             label="Undo"
             >
             <svg inline-src="undo-fa" height=".5em" fill="currentColor" />
-        </WhiteButton>
+        </ActionButton>
     </div>
 {/snippet}
 
@@ -82,7 +82,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 {/if}
 
 <style>
-    /* Wrapper: scoped styles cannot reach the button inside WhiteButton. */
+    /* Wrapper: scoped styles cannot reach the button inside ActionButton. */
     .undo {
         margin-left: auto;
         align-self: stretch;

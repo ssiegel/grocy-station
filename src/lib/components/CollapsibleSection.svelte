@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import WhiteButton from "$lib/components/WhiteButton.svelte";
+    import ActionButton from "$lib/components/ActionButton.svelte";
 
     interface Props {
         header: string;
@@ -27,12 +27,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <div class="header">
     <div class="stretch">
-        <WhiteButton
+        <ActionButton
             onclick={onClick}
             selected={expanded}
             >
             {header}
-        </WhiteButton>
+        </ActionButton>
     </div>
     {#if buttons}
         {#each buttons as button}
@@ -53,7 +53,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         justify-content: flex-start;
     }
 
-    /* Wrapper: scoped styles cannot reach the button inside WhiteButton. */
+    /* Wrapper: scoped styles cannot reach the button inside ActionButton. */
     .stretch {
         align-self: stretch;
     }

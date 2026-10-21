@@ -49,24 +49,32 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         border-radius: 0.25rem;
     }
 
-    /* Action buttons carry the icon actions; they fill their wrapper. */
+    /* Action buttons carry the icon actions; they fill their wrapper.
+     * They read as "operate this": an outline over the body rather than a
+     * solid keycap, so a screen full of them stays quiet. */
     .action {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
         height: 100%;
-        padding: 1rem;
-        color: var(--color-btn-fg);
-        background-color: var(--color-btn-bg-default);
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--color-primary-dark);
+        color: var(--color-primary-lighter);
+        background-color: transparent;
     }
 
     .action:disabled {
-        color: var(--color-btn-bg-focus);
+        border-color: var(--color-shade-default);
+        color: var(--color-shade-high);
     }
 
     .action:focus {
-        background-color: var(--color-btn-bg-focus);
+        background-color: var(--color-shade-default);
     }
 
     .action:active {
-        background-color: var(--color-btn-bg-active);
+        background-color: var(--color-shade-high);
     }
 
     /* Select buttons toggle between the input and the button palette. */
@@ -103,7 +111,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
     @media (hover: hover) {
         .action:not(:disabled):hover {
-            background-color: var(--color-btn-bg-hover);
+            background-color: var(--color-shade-default);
         }
 
         .select:hover {
