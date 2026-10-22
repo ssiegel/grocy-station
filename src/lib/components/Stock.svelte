@@ -52,6 +52,17 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 {#snippet actions()}
+    <!-- Spoiled leads, so that Consume keeps the trailing edge it has always
+         had: it is the action reached for most often, and a moving target is
+         the one thing worse than a small one. -->
+    <ActionButton
+        danger
+        disabled={!productState.consumeValid || productState.progress != 0}
+        onclick={async () => productState.doConsume(false, true)}
+        label="Consume as spoiled"
+    >
+        Spoiled
+    </ActionButton>
     <ActionButton
         compact
         disabled={!productState.consumeValid || productState.progress != 0}
@@ -69,14 +80,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     >
         <svg inline-src="consume" height="1em" fill="currentColor" />
         Consume
-    </ActionButton>
-    <ActionButton
-        danger
-        disabled={!productState.consumeValid || productState.progress != 0}
-        onclick={async () => productState.doConsume(false, true)}
-        label="Consume as spoiled"
-    >
-        Spoiled
     </ActionButton>
 {/snippet}
 
