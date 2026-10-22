@@ -70,11 +70,10 @@ export type GrocyShoppingList = {
   name: string;
 };
 
-/** A shopping list, paired with the product's item on it if there is one. */
-export type GrocyShoppingListEntry = {
+/** A shopping list item, paired with the list it sits on. */
+export type GrocyShoppingListItemEntry = {
   list: GrocyShoppingList;
-  /** Absent when the product is not on this list. */
-  item?: GrocyShoppingListItem;
+  item: GrocyShoppingListItem;
 };
 
 /** Product purchasing or consumption packaging units.

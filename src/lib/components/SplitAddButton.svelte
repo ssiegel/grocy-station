@@ -14,16 +14,16 @@ per list.
 
 <script lang="ts">
     import ActionButton from "$lib/components/ActionButton.svelte";
-    import type { GrocyShoppingListEntry } from "$lib/types/grocy";
+    import type { GrocyShoppingList } from "$lib/types/grocy";
 
     interface Props {
         /** The list the main half adds to. */
-        primary: GrocyShoppingListEntry;
+        primary: GrocyShoppingList;
         /** Offered by the menu, in display order. */
-        others: GrocyShoppingListEntry[];
+        others: GrocyShoppingList[];
         disabled: boolean;
-        /** Renders an entry's current amount for the menu. */
-        formatAmount: (entry: GrocyShoppingListEntry) => string | undefined;
+        /** What a list already wants, or undefined if it wants nothing. */
+        formatAmount: (list: GrocyShoppingList) => string | undefined;
         onadd: (listId: number) => void;
     }
 
@@ -57,10 +57,10 @@ per list.
         <ActionButton
             subtle
             {disabled}
-            onclick={() => add(primary.list.id)}
-            label="Add to {primary.list.name}"
+            onclick={() => add(primary.id)}
+            label="Add to {primary.name}"
         >
-            + {primary.list.name}
+            + {primary.name}
         </ActionButton>
         {#if others.length}
             <ActionButton
@@ -80,12 +80,12 @@ per list.
     </div>
     {#if menuOpen}
         <div class="menu">
-            {#each others as entry (entry.list.id)}
-                <button class="option" onclick={() => add(entry.list.id)}>
-                    <span class="option-name">{entry.list.name}</span>
-                    {#if formatAmount(entry) !== undefined}
+            {#each others as list (list.id)}
+                <button class="option" onclick={() => add(list.id)}>
+                    <span class="option-name">{list.name}</span>
+                    {#if formatAmount(list) !== undefined}
                         <span class="option-amount">
-                            on · {formatAmount(entry)}
+                            on · {formatAmount(list)}
                         </span>
                     {/if}
                 </button>

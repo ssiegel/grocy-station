@@ -141,16 +141,19 @@ export class GrocyClient {
     );
   }
 
-  // This posting method allows for
-  // amount to be unspecified and
-  // it actually be reflected in grocy.
-  // with the endpoint
-  // `/stock/shoppinglist/add-product`
-  // "null" amounts are defaulted to "1".
+  /**
+   * Add an item to a shopping list.
+   *
+   * Posts the item directly rather than going through
+   * `/stock/shoppinglist/add-product`, which folds the amount into any
+   * existing item for the product and so cannot produce a second one.
+   *
+   * `amount` is in the product's stock quantity unit.
+   */
   public static async postAddToShoppingList(
     product_id: number,
+    amount: number,
     shopping_list_id?: number,
-    amount?: number,
   ) {
     return await this.BASE_CLIENT.POST(`/objects/{entity}`, {
       params: {
@@ -163,31 +166,6 @@ export class GrocyClient {
       },
       signal: abortTimeoutSignal(),
     });
-  }
-
-  /**
-   * Add to a shopping list, folding into an existing item for the product
-   * if the list already holds one.
-   *
-   * `product_amount` is in the product's stock quantity unit, and must be
-   * given: this endpoint silently substitutes 1 for an absent amount.
-   */
-  public static async postAddProductToShoppingList(
-    product_id: number,
-    product_amount: number,
-    list_id?: number,
-  ) {
-    return await this.BASE_CLIENT.POST(
-      `/stock/shoppinglist/add-product`,
-      {
-        body: {
-          product_id: product_id,
-          list_id: list_id,
-          product_amount: product_amount,
-        },
-        signal: abortTimeoutSignal(),
-      },
-    );
   }
 
   public static async postConsume(
@@ -215,22 +193,22 @@ export class GrocyClient {
     );
   }
 
-  public static async postRemoveProductShopping(
-    product_id: number,
-    product_amount: number,
-    list_id?: number,
+  /**
+   * Delete one shopping list item.
+   *
+   * Addressed by the item's own id, since
+   * `/stock/shoppinglist/remove-product` works on product and list only and
+   * so cannot name one item among several for the same product.
+   */
+  public static async deleteShoppingListItem(
+    item_id: number,
   ) {
-    return await this.BASE_CLIENT.POST(
-      `/stock/shoppinglist/remove-product`,
-      {
-        body: {
-          product_id: product_id,
-          list_id: list_id,
-          product_amount: product_amount,
-        },
-        signal: abortTimeoutSignal(),
+    return await this.BASE_CLIENT.DELETE(`/objects/{entity}/{objectId}`, {
+      params: {
+        path: { entity: "shopping_list", objectId: item_id },
       },
-    );
+      signal: abortTimeoutSignal(),
+    });
   }
 
   public static async postRemoveBooking(

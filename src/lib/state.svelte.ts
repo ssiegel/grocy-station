@@ -14,7 +14,7 @@ import type {
   GrocyData,
   GrocyProductGroup,
   GrocyShoppingList,
-  GrocyShoppingListEntry,
+  GrocyShoppingListItemEntry,
 } from "$lib/types/grocy";
 import { PackagingUnitsBuilder } from "$lib/packaging";
 
@@ -186,11 +186,17 @@ export class ProductState extends State {
   /** *Statefull* */
   public consumeValid = $state(false);
   /**
-   * Every shopping list, each paired with this product's item on it where
-   * there is one.
+   * One entry per shopping list item for this product, each carrying the
+   * list it sits on. A list holding several items for the product appears
+   * once per item.
    *
    * *Derived* */
-  public readonly shoppingListEntries: GrocyShoppingListEntry[];
+  public readonly shoppingListItemEntries: GrocyShoppingListItemEntry[];
+  /**
+   * Every shopping list that exists, whether or not the product is on it.
+   *
+   * *Derived* */
+  public readonly shoppingLists: GrocyShoppingList[];
   /** *Statefull* */
   selectedStockEntryIndex: number = $state(0);
   /** *Statefull* */
@@ -231,34 +237,28 @@ export class ProductState extends State {
     this.inputQuantity = $state("1");
     this.inputUnitSize = $state(String(basePackagingUnitAmount(grocyData)));
     this.consumeAmount = $derived(this.unitSize() * this.quantity());
-    this.shoppingListEntries = $derived.by(() => {
+    this.shoppingListItemEntries = $derived.by(() => {
       // The cache is not reactive, so a miss here is not re-run when it is
       // later filled. The lists are among those warmed at startup, which
       // happens long before a scan can reach this.
       const lists = (GrocyObjectCache.getCachedObject("shopping_lists") ??
         []) as GrocyShoppingList[];
-      // A product can hold several items on one list, which Grocy's own UI
-      // also allows. Showing the first would understate the amount, so they
-      // are summed into one entry per list.
-      return lists.map((list) => {
-        const items = this.grocyData.shopping_list_items.filter(
-          (item) => item.shopping_list_id === list.id,
+      // A list can hold several items for one product, which Grocy's own UI
+      // allows and which can carry per-item notes. Each keeps its own entry
+      // so that none of that is flattened away.
+      return this.grocyData.shopping_list_items.flatMap((item) => {
+        const list = lists.find(
+          (candidate) => candidate.id === item.shopping_list_id,
         );
-        if (items.length === 0) {
-          return { list };
-        }
-        return {
-          list,
-          item: {
-            ...items[0],
-            amount: items.reduce((sum, item) => sum + item.amount, 0),
-            // Only wholly purchased entries read as done; a part-done list
-            // still has something outstanding on it.
-            done: items.every((item) => item.done) ? 1 : 0,
-          },
-        };
+        // An item whose list is missing from the cache cannot be labelled,
+        // and is dropped rather than shown against a blank name.
+        return list === undefined ? [] : [{ list, item }];
       });
     });
+    this.shoppingLists = $derived(
+      (GrocyObjectCache.getCachedObject("shopping_lists") ??
+        []) as GrocyShoppingList[],
+    );
   }
 
   /** Returns currents state of ProductState.inputQuantity as numeric. */
@@ -470,8 +470,9 @@ export class ProductState extends State {
   /**
    * Put the composed amount on a shopping list.
    *
-   * Grocy folds the amount into an existing item for the product, so adding
-   * twice raises the amount rather than leaving two rows behind.
+   * Each call adds an item of its own. Two trips to the same list stay two
+   * items, since they are two separate intentions to buy, which a single
+   * summed item could no longer be unpicked into.
    */
   async addToShoppingList(listId: number) {
     if (
@@ -480,7 +481,7 @@ export class ProductState extends State {
     ) return;
 
     this.progress = 1;
-    await GrocyClient.postAddProductToShoppingList(
+    await GrocyClient.postAddToShoppingList(
       this.productId,
       this.consumeAmount,
       listId,
@@ -490,26 +491,17 @@ export class ProductState extends State {
   }
 
   /**
-   * Take the product off a shopping list entirely.
+   * Delete one shopping list item.
    *
    * Removal is not the inverse of adding: it clears the item rather than
    * deducting the composed amount. Whoever took it off the list is saying
    * they no longer want it, which is not a statement about a quantity.
    */
-  async removeFromShoppingList(listId: number) {
+  async removeShoppingListItem(itemId: number) {
     if (this.progress !== 0) return;
 
-    const entry = this.shoppingListEntries.find(
-      (candidate) => candidate.list.id === listId,
-    );
-    if (entry?.item === undefined) return;
-
     this.progress = 1;
-    await GrocyClient.postRemoveProductShopping(
-      this.productId,
-      entry.item.amount,
-      listId,
-    );
+    await GrocyClient.deleteShoppingListItem(itemId);
     await this.refresh();
   }
 
