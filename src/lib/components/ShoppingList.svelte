@@ -204,8 +204,12 @@ more than once gets a row per item, each a separate intention to buy.
         justify-self: end;
     }
 
+    /* Sized like the rows it stands in for, so that the section does not
+     * shout loudest when it has nothing to report. */
     .empty {
         padding: 0.25rem 0.5rem;
+        font-size: var(--text-lg);
+        line-height: var(--text-lg--line-height);
         font-style: italic;
     }
 

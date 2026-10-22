@@ -176,8 +176,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 {/if}
 
 <style>
+    /* Sized like the table it stands in for, so that the section does not
+     * shout loudest when it has nothing to report. */
     .empty {
         padding: 0.25rem 0.5rem;
+        font-size: var(--text-lg);
+        line-height: var(--text-lg--line-height);
         font-style: italic;
     }
 
