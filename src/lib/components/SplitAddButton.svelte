@@ -53,9 +53,10 @@ per list.
 <svelte:window onpointerdown={closeOnOutsidePress} />
 
 <div class="container" bind:this={container}>
-    <div class="split">
+    <div class="split" class:disabled>
         <ActionButton
             subtle
+            cell
             {disabled}
             onclick={() => add(primary.id)}
             label="Add to {primary.name}"
@@ -65,6 +66,7 @@ per list.
         {#if others.length}
             <ActionButton
                 subtle
+                cell
                 {disabled}
                 onclick={() => (menuOpen = !menuOpen)}
                 label="Add to another list"
@@ -100,13 +102,29 @@ per list.
         display: flex;
     }
 
-    /* The two halves read as one control, so they share an outline: each
-     * button's own is collapsed into the gap between them. */
+    /* The two halves read as one control, so the group draws the outline
+     * and the cells go without, exactly as in SegmentedControl. Stacking two
+     * outlined buttons instead would double the border down the middle. */
     .split {
-        display: flex;
+        display: inline-flex;
         flex-direction: row;
-        gap: 1px;
-        background-color: var(--color-separator);
+        overflow: hidden;
+        border: 2px solid var(--color-primary-dark);
+        border-radius: 0.25rem;
+    }
+
+    .split.disabled {
+        border-color: var(--color-shade-default);
+    }
+
+    /* Cells share one outline, so they are divided by a hairline instead.
+     * Drawn by the group: a cell cannot know whether it has a neighbour.
+     *
+     * The doubled class out-specifies the rule in ActionButton that strips a
+     * cell's borders, which would otherwise take this one with it depending
+     * on the order the two components' styles happen to be emitted in. */
+    .split.split :global(button + button) {
+        border-left: 1px solid var(--color-separator);
     }
 
     .chevron {

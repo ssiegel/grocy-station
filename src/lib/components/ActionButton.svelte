@@ -30,6 +30,11 @@ quiet enough that a screenful of them does not shout.
          * cannot be hit by muscle memory aimed at the action beside it.
          */
         danger?: boolean;
+        /**
+         * Drops the button's own outline and corners, for use as one cell of
+         * a group that draws a single outline around the whole of itself.
+         */
+        cell?: boolean;
     }
 
     let {
@@ -40,12 +45,14 @@ quiet enough that a screenful of them does not shout.
         hidden = false,
         subtle = false,
         danger = false,
+        cell = false,
     }: Props = $props();
 </script>
 
 <button
     class:subtle={subtle || danger}
     class:danger
+    class:cell
     {disabled}
     {hidden}
     {onclick}
@@ -95,6 +102,14 @@ quiet enough that a screenful of them does not shout.
 
     .danger:disabled {
         color: var(--color-shade-high);
+    }
+
+    /* The enclosing group owns the outline and the corners. The hairline
+     * dividing the cells is the group's business too, since only it knows
+     * which cells have a neighbour, so this must not out-specify it. */
+    .cell {
+        border: none;
+        border-radius: 0;
     }
 
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
