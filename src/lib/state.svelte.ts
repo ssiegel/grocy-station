@@ -293,20 +293,27 @@ export class ProductState extends State {
       try {
         do {
           this.refreshQueued = false;
-          // Don't drag the bar backwards over an action's own progress.
-          this.progress = Math.max(this.progress, 25);
+          // 100 means done, so a new pass restarts the bar rather than
+          // inheriting it; below that keep an action's own higher value.
+          this.progress = this.progress === 100
+            ? 25
+            : Math.max(this.progress, 25);
           try {
-            // Must precede the reads: a watermark taken afterwards would
-            // cover changes they never saw.
-            const changedTime = await GrocyClient.getDbChangedTime();
-            await Promise.all([
-              this.updateStock(),
-              this.updateStockLogs(),
-              this.updateShoppingListItems(),
-            ]);
-            // A watermark must never claim data we failed to read; keeping
-            // the older one costs at most a redundant refresh.
-            this.watermark = changedTime;
+            const previous = this.watermark;
+            // Adopted before the reads, so our own echo of them cannot
+            // queue a redundant second pass.
+            this.watermark = await GrocyClient.getDbChangedTime();
+            try {
+              await Promise.all([
+                this.updateStock(),
+                this.updateStockLogs(),
+                this.updateShoppingListItems(),
+              ]);
+            } catch (e) {
+              // A watermark must never claim data we failed to read.
+              this.watermark = previous;
+              throw e;
+            }
           } catch (e) {
             console.warn("refresh failed:", e);
           }

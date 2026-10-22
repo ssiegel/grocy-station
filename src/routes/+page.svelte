@@ -33,9 +33,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         }
     });
 
+    // Clear the bar shortly after completion. The cleanup is required: a
+    // reset left pending would fire into the next refresh and blank the bar
+    // mid-flight.
     $effect(() => {
         if (pageState.progress === 100) {
-            setTimeout(() => pageState.progress = 0, 300);
+            const reset = setTimeout(() => pageState.progress = 0, 300);
+            return () => clearTimeout(reset);
         };
     })
 
