@@ -83,6 +83,7 @@ export class PackagingUnitsBuilder {
     if (this.barcode.amount == null || this.barcode.qu_id == null) {
       return undefined;
     }
+    // Full precision: a packaging unit amount is a factor, not an amount.
     const barcodeAmountStockUnits = this.barcode.amount *
       quStockquConversionFactorMap.get(this.barcode.qu_id)!;
 

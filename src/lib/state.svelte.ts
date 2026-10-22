@@ -10,6 +10,7 @@ import {
   GrocyClient,
   GrocyObjectCache,
 } from "$lib/grocy";
+import { amountsEqual, formatFactor, quantizeAmount } from "$lib/amount";
 import type {
   GrocyData,
   GrocyProductGroup,
@@ -235,8 +236,12 @@ export class ProductState extends State {
     // product_details.product.id is fetched based on barcode.product_id
     this.productId = $derived(grocyData.barcode.product_id);
     this.inputQuantity = $state("1");
-    this.inputUnitSize = $state(String(basePackagingUnitAmount(grocyData)));
-    this.consumeAmount = $derived(this.unitSize() * this.quantity());
+    this.inputUnitSize = $state(formatFactor(basePackagingUnitAmount(grocyData)));
+    // Quantized, so this is the decimal the user meant rather than a float
+    // a hair above or below it.
+    this.consumeAmount = $derived(
+      quantizeAmount(this.unitSize() * this.quantity()),
+    );
     this.shoppingListItemEntries = $derived.by(() => {
       // The cache is not reactive, so a miss here is not re-run when it is
       // later filled. The lists are among those warmed at startup, which
@@ -291,17 +296,22 @@ export class ProductState extends State {
       if (idx < this.selectedStockEntryIndex) {
         entry.amount_allotted = 0;
       } else {
-        entry.amount_allotted = Math.min(entry.amount, remaining);
-        remaining -= entry.amount_allotted;
+        // Quantized at every step: the running remainder is a difference of
+        // decimals, and subtracting in binary floating point accumulates the
+        // error that would otherwise keep it from ever reaching zero.
+        entry.amount_allotted = quantizeAmount(
+          Math.min(entry.amount, remaining),
+        );
+        remaining = quantizeAmount(remaining - entry.amount_allotted);
       }
     }
 
-    this.consumeValid = remaining === 0;
+    this.consumeValid = amountsEqual(remaining, 0);
   }
 
   resetQuantity() {
     this.inputQuantity = "1";
-    this.inputUnitSize = String(basePackagingUnitAmount(this.grocyData));
+    this.inputUnitSize = formatFactor(basePackagingUnitAmount(this.grocyData));
     this.selectedStockEntryIndex = 0;
     this.reAllot();
   }

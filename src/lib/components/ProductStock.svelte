@@ -5,6 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
 <script lang="ts">
+    import { amountsEqual, formatFactor } from "$lib/amount";
     import { formatUnit, formatNumber } from "$lib/format";
     import { type ProductState } from "$lib/state.svelte";
     import Stock from "$lib/components/Stock.svelte";
@@ -18,13 +19,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     const packagingUnits = $derived(productData.packaging_units);
 
     // The unit size is a free-text field, so the selection follows the
-    // amount rather than the other way round: typing an amount by hand
-    // highlights the matching unit, and typing one that belongs to no unit
-    // highlights nothing. Units sharing an amount cannot be told apart this
-    // way, so the first of them stands in for the rest.
+    // amount typed rather than the other way round. Matched with a
+    // tolerance, since the field holds a rounded rendering of the unit size.
     const selectedPackagingUnitIndex = $derived(
         packagingUnits.units.findIndex(
-            (pu) => pu.amount === productState.unitSize(),
+            (pu) => amountsEqual(pu.amount, productState.unitSize()),
         ),
     );
 </script>
@@ -53,7 +52,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         selectedIndex={selectedPackagingUnitIndex}
         defaultIndex={packagingUnits.baseIndex}
         onselect={(i) =>
-            (productState.inputUnitSize = String(packagingUnits.units[i].amount))}
+            (productState.inputUnitSize = formatFactor(
+                packagingUnits.units[i].amount,
+            ))}
     />
     <div class="amount-row">
         <div>

@@ -6,6 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <script lang="ts">
     import { pressaction } from "$lib/pressaction.svelte";
+    import { formatFactor, quantizeAmount } from "$lib/amount";
     import { formatNumber, formatDate } from "$lib/format";
     import { GrocyObjectCache } from "$lib/grocy";
     import type { GrocyStockEntry } from "$lib/types/grocy";
@@ -47,7 +48,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     }
 
     function stockEntryLongPressed(entry: GrocyStockEntry) {
-        productState.inputQuantity = (entry.amount / productState.unitSize()).toString();
+        // The quantity that consumes this entry exactly, as a factor rather
+        // than a quantized amount: rounding it would overshoot the entry
+        // it was derived from.
+        productState.inputQuantity = formatFactor(
+            entry.amount / productState.unitSize(),
+        );
     }
 </script>
 
@@ -117,7 +123,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             fill="currentColor"
                         />
                     {/if}
-                    {formatNumber(entry.amount / productState.unitSize())}
+                    {formatNumber(
+                        quantizeAmount(entry.amount / productState.unitSize()),
+                    )}
                 </div>
                 <div
                     style="grid-area: {i * 2 + 2} / 2"

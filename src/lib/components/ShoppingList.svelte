@@ -11,6 +11,7 @@ more than once gets a row per item, each a separate intention to buy.
 -->
 
 <script lang="ts">
+    import { quantizeAmount } from "$lib/amount";
     import { formatNumber } from "$lib/format";
     import {
         DEFAULT_SHOPPING_LIST_ID,
@@ -46,7 +47,11 @@ more than once gets a row per item, each a separate intention to buy.
         if (items.length === 0) {
             return undefined;
         }
-        const total = items.reduce((sum, entry) => sum + entry.item.amount, 0);
+        // Quantized: a sum of decimals drifts in binary floating point, and
+        // three items of 0.1 should read as 0.3 rather than 0.30000000000000004.
+        const total = quantizeAmount(
+            items.reduce((sum, entry) => sum + entry.item.amount, 0),
+        );
         const amount = formatNumber(total, stockUnitId);
         // The item count only earns its space when it is not 1, where the
         // amount already tells the whole story.
