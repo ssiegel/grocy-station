@@ -98,7 +98,7 @@ more than once gets a row per item, each a separate intention to buy.
     actions={productState.shoppingListExpanded ? actions : undefined}
 >
     {#if entries.length}
-        <div class="grid">
+        <div class="data-grid grid">
             <div class="indent align-end">Amt</div>
             <div>List</div>
             <div></div>
@@ -144,42 +144,21 @@ more than once gets a row per item, each a separate intention to buy.
             {/each}
         </div>
     {:else}
-        <div class="empty">Not on any list</div>
+        <div class="section-empty">Not on any list</div>
     {/if}
 </CollapsibleSection>
 
 <style>
+    /* Amt, then the list name taking the remainder, then the remove button.
+     * Centred, since a row's height is set by that button rather than by
+     * the text beside it. */
     .grid {
-        display: grid;
         grid-template-columns: max-content 1fr max-content;
-        column-gap: 0.5rem;
         align-items: center;
-        font-size: var(--text-lg);
-        line-height: var(--text-lg--line-height);
-        color: var(--color-label-fg);
-    }
-
-    .indent {
-        padding-left: 0.5rem;
-    }
-
-    .align-end {
-        justify-self: end;
-    }
-
-    .nowrap {
-        white-space: nowrap;
     }
 
     .name {
         color: var(--color-primary-default);
-    }
-
-    /* Distinguishes two items on the same list, which are otherwise
-     * identical rows. */
-    .note {
-        padding-inline: 1rem;
-        font-style: italic;
     }
 
     /* Already bought, but still on the list. Struck through rather than
@@ -204,22 +183,4 @@ more than once gets a row per item, each a separate intention to buy.
         justify-self: end;
     }
 
-    /* Sized like the rows it stands in for, so that the section does not
-     * shout loudest when it has nothing to report. */
-    .empty {
-        padding: 0.25rem 0.5rem;
-        font-size: var(--text-lg);
-        line-height: var(--text-lg--line-height);
-        font-style: italic;
-    }
-
-    /* Zebra striping, drawn as a backdrop spanning the full row. */
-    .stripe {
-        background-color: var(--color-shade-low);
-        opacity: 0.2;
-    }
-
-    .stripe.odd {
-        background-color: var(--color-darken);
-    }
 </style>

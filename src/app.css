@@ -133,3 +133,69 @@ html {
   /* Kiosk tablet: suppress the tap flash on every touch. */
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Data tables - the stock, shopping list and journal sections.
+ *
+ * These live here rather than in each component because Svelte scopes
+ * component styles, so three components otherwise each restate the same
+ * rules. Only what is genuinely common is here; a table's own column
+ * layout and its row decorations stay with the component that knows about
+ * them.
+ *
+ * They are set below the body size: a section lists detail, and the kiosk
+ * reads the product and the composed amount from further away than the rows.
+ */
+.data-grid {
+  display: grid;
+  column-gap: 0.5rem;
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+  color: var(--color-label-fg);
+}
+
+/* Aligns a cell against the column rule the header sets. */
+.data-grid .indent {
+  padding-left: 0.5rem;
+}
+
+.data-grid .align-start {
+  justify-self: start;
+}
+
+.data-grid .align-center {
+  justify-self: center;
+}
+
+.data-grid .align-end {
+  justify-self: end;
+}
+
+.data-grid .nowrap {
+  white-space: nowrap;
+}
+
+/* A row's own annotation, under the row it belongs to. */
+.data-grid .note {
+  padding-inline: 1rem;
+  font-style: italic;
+}
+
+/* Zebra striping, drawn as a backdrop spanning the full row rather than as
+ * a background on each cell, so the column gaps are striped too. */
+.data-grid .stripe {
+  background-color: var(--color-shade-low);
+  opacity: 0.2;
+}
+
+.data-grid .stripe.odd {
+  background-color: var(--color-darken);
+}
+
+/* Stands in for a table with nothing in it. Matches the rows it replaces,
+ * so that a section does not shout loudest when it has least to say. */
+.section-empty {
+  padding: 0.25rem 0.5rem;
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+  font-style: italic;
+}

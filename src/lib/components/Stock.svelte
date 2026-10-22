@@ -97,7 +97,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         actions={productState.stockExpanded ? actions : undefined}
     >
     {#if productData.stock.length}
-        <div class="grid">
+        <div class="data-grid grid">
             <div class="indent align-end">Qty</div>
             <div class="align-end">Amt</div>
             <div>
@@ -170,60 +170,20 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             {/each}
         </div>
     {:else}
-        <div class="empty">Not in stock</div>
+        <div class="section-empty">Not in stock</div>
     {/if}
     </CollapsibleSection>
 {/if}
 
 <style>
-    /* Sized like the table it stands in for, so that the section does not
-     * shout loudest when it has nothing to report. */
-    .empty {
-        padding: 0.25rem 0.5rem;
-        font-size: var(--text-lg);
-        line-height: var(--text-lg--line-height);
-        font-style: italic;
-    }
-
+    /* Qty, Amt, Due, Location, then the note column taking the remainder. */
     .grid {
-        display: grid;
         grid-template-columns: max-content max-content max-content max-content 1fr;
-        column-gap: 0.5rem;
-        font-size: var(--text-lg);
-        line-height: var(--text-lg--line-height);
-        color: var(--color-label-fg);
-    }
-
-    .indent {
-        padding-left: 0.5rem;
-    }
-
-    .align-end {
-        justify-self: end;
-    }
-
-    .nowrap {
-        white-space: nowrap;
     }
 
     .open-icon {
         display: inline;
         padding-bottom: 0.25rem;
-    }
-
-    .note {
-        padding-inline: 1rem;
-        font-style: italic;
-    }
-
-    /* Zebra striping, drawn as a backdrop spanning the full row. */
-    .stripe {
-        background-color: var(--color-shade-low);
-        opacity: 0.2;
-    }
-
-    .stripe.odd {
-        background-color: var(--color-darken);
     }
 
     /* Press target overlaying the row; the left border marks allotment. */

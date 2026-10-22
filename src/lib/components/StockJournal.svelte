@@ -66,7 +66,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         }
         onclose={() => productState.selectedStockLogEntryIndex = undefined}
     >
-        <div class="grid">
+        <div class="data-grid grid">
         <div class="indent align-start">Transaction</div>
         <div class="align-start">Amt</div>
         <div class="align-start">Time</div>
@@ -109,39 +109,19 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 {/if}
 
 <style>
+    /* Type, Amt, Due, Time, then the user column taking the remainder. */
     .grid {
-        display: grid;
         grid-template-columns: max-content max-content max-content max-content 1fr;
-        column-gap: 0.5rem;
-        font-size: var(--text-lg);
-        line-height: var(--text-lg--line-height);
-        color: var(--color-label-fg);
     }
 
-    .indent {
-        padding-left: 0.5rem;
-    }
-
-    .align-start {
-        justify-self: start;
-    }
-
-    .align-center {
-        justify-self: center;
-    }
-
-    .nowrap {
-        white-space: nowrap;
-    }
-
-    /* Zebra striping, drawn as a backdrop spanning the full row.
-     * Note the phase is inverted relative to the stock table. */
-    .stripe {
+    /* The stripe phase is inverted relative to the other tables, so that a
+     * journal row does not align with the stock row above it and suggest a
+     * correspondence that is not there. */
+    .grid :global(.stripe) {
         background-color: var(--color-darken);
-        opacity: 0.2;
     }
 
-    .stripe.odd {
+    .grid :global(.stripe.odd) {
         background-color: var(--color-shade-low);
     }
 
