@@ -25,7 +25,173 @@ function orderPackagingUnits(
   return { units: ordered, baseIndex: ordered.indexOf(baseUnit) };
 }
 
-type QutoStockQuConversionFactorMap = Map<number, number>;
+/** Maps a quantity unit id to its conversion factor into stock units. */
+export type QutoStockQuConversionFactorMap = Map<number, number>;
+
+/**
+ * The packaging units a barcode declares, or undefined if it declares none.
+ *
+ * Separate from the builder, and taking the conversion factors as an
+ * argument, so that it can be exercised without the request the builder
+ * makes to resolve them.
+ */
+export function barcodePackagingUnits(
+  barcode: GrocyBarcode,
+  quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
+): GrocyPackagingUnits | undefined {
+  if (barcode.amount == null || barcode.qu_id == null) {
+    return undefined;
+  }
+  // Full precision: a packaging unit amount is a factor, not an amount.
+  const barcodeAmountStockUnits = barcode.amount *
+    quStockquConversionFactorMap.get(barcode.qu_id)!;
+
+  // get pu from barcode qu
+  const basePu = {
+    name: "Barcode PU",
+    amount_display: formatNumber(barcode.amount, barcode.qu_id),
+    amount: barcodeAmountStockUnits,
+  };
+  const pus = [basePu];
+
+  // get pu from barcode userfields
+  for (
+    const line of (barcode.userfields?.packaging_units ?? "").split(/\r?\n/)
+  ) {
+    const match = line.match(/^(\d+)(?:\/(\d+))?\s+(.*)$/);
+    if (!match) {
+      continue;
+    }
+    const factor = Number(match[1]) / Number(match[2] ?? 1);
+    if (factor === 1) {
+      // The barcode's own amount, named by the userfield rather than
+      // duplicated as a second unit of the same size.
+      basePu.name = match[3];
+    } else {
+      pus.push({
+        name: match[3],
+        amount_display: formatNumber(barcode.amount * factor, barcode.qu_id),
+        amount: barcodeAmountStockUnits * factor,
+      });
+    }
+  }
+  return orderPackagingUnits(pus, basePu);
+}
+
+/**
+ * The fallback packaging units, from the product's quick amounts.
+ *
+ * Used for a product whose barcode declares no amount of its own.
+ */
+export function productDetailsPackagingUnits(
+  productDetails: GrocyProductDetails,
+  quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
+): GrocyPackagingUnits {
+  const product = productDetails.product;
+  const quickCAmount = product.quick_consume_amount;
+  const quicksimplePus = [{ name: "Quick C", amount: quickCAmount }];
+
+  const quickOAmount = product.quick_open_amount;
+  if (quickOAmount !== quickCAmount) {
+    quicksimplePus.push({ name: "Quick O", amount: quickOAmount });
+  }
+
+  const quickPus: GrocyPackagingUnit[] = quicksimplePus.map((simplePu) => ({
+    name: simplePu.name,
+    amount_display: formatNumber(
+      simplePu.amount /
+        quStockquConversionFactorMap.get(product.qu_id_consume)!,
+      product.qu_id_consume,
+    ),
+    amount: simplePu.amount,
+  }));
+  // "Quick C" is the consume default, so it is the base unit.
+  return orderPackagingUnits(quickPus, quickPus[0]);
+}
+
+/**
+ * The packaging units a barcode declares, or undefined if it declares none.
+ *
+ * Separate from the builder, and taking the conversion factors as an
+ * argument, so that it can be exercised without the request the builder
+ * makes to resolve them.
+ */
+export function barcodePackagingUnits(
+  barcode: GrocyBarcode,
+  quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
+): GrocyPackagingUnits | undefined {
+  if (barcode.amount == null || barcode.qu_id == null) {
+    return undefined;
+  }
+  // Full precision: a packaging unit amount is the factor the quantity
+  // multiplies, not an amount in its own right. A `1/3` unit of a 1 l
+  // barcode rounded to 0.3333 could never compose back to the whole litre.
+  const barcodeAmountStockUnits = barcode.amount *
+    quStockquConversionFactorMap.get(barcode.qu_id)!;
+
+  // get pu from barcode qu
+  const basePu = {
+    name: "Barcode PU",
+    amount_display: formatNumber(barcode.amount, barcode.qu_id),
+    amount: barcodeAmountStockUnits,
+  };
+  const pus = [basePu];
+
+  // get pu from barcode userfields
+  for (
+    const line of (barcode.userfields?.packaging_units ?? "").split(/\r?\n/)
+  ) {
+    const match = line.match(/^(\d+)(?:\/(\d+))?\s+(.*)$/);
+    if (!match) {
+      continue;
+    }
+    const factor = Number(match[1]) / Number(match[2] ?? 1);
+    if (factor === 1) {
+      // The barcode's own amount, named by the userfield rather than
+      // duplicated as a second unit of the same size.
+      basePu.name = match[3];
+    } else {
+      pus.push({
+        name: match[3],
+        amount_display: formatNumber(barcode.amount * factor, barcode.qu_id),
+        amount: barcodeAmountStockUnits * factor,
+      });
+    }
+  }
+  return orderPackagingUnits(pus, basePu);
+}
+
+/**
+ * The fallback packaging units, from the product's quick amounts.
+ *
+ * Used for a product whose barcode declares no amount of its own.
+ */
+export function productDetailsPackagingUnits(
+  productDetails: GrocyProductDetails,
+  quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
+): GrocyPackagingUnits {
+  const product = productDetails.product;
+  const quickCAmount = product.quick_consume_amount;
+  const quicksimplePus = [{ name: "Quick C", amount: quickCAmount }];
+
+  const quickOAmount = product.quick_open_amount;
+  if (quickOAmount !== quickCAmount) {
+    quicksimplePus.push({ name: "Quick O", amount: quickOAmount });
+  }
+
+  const quickPus: GrocyPackagingUnit[] = quicksimplePus.map((simplePu) => ({
+    name: simplePu.name,
+    amount_display: formatNumber(
+      simplePu.amount /
+        quStockquConversionFactorMap.get(product.qu_id_consume)!,
+      product.qu_id_consume,
+    ),
+    amount: simplePu.amount,
+  }));
+  // "Quick C" is the consume default, so it is the base unit.
+  return orderPackagingUnits(quickPus, quickPus[0]);
+}
+
 export class PackagingUnitsBuilder {
   barcode: GrocyBarcode;
   productDetails: GrocyProductDetails;
@@ -77,101 +243,15 @@ export class PackagingUnitsBuilder {
     return quStockquConversionFactorMap;
   }
 
-  private buildBarcodePackagingUnits(
-    quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
-  ): GrocyPackagingUnits | undefined {
-    if (this.barcode.amount == null || this.barcode.qu_id == null) {
-      return undefined;
-    }
-    // Full precision: a packaging unit amount is a factor, not an amount.
-    const barcodeAmountStockUnits = this.barcode.amount *
-      quStockquConversionFactorMap.get(this.barcode.qu_id)!;
-
-    // get pu from barcode qu
-    const basePu = {
-      name: "Barcode PU",
-      amount_display: formatNumber(
-        this.barcode.amount,
-        this.barcode.qu_id,
-      ),
-      amount: barcodeAmountStockUnits,
-    };
-    const pus = [basePu];
-
-    // get pu from barcode userfields
-    for (
-      const line of (this.barcode.userfields?.packaging_units ?? "").split(
-        /\r?\n/,
-      )
-    ) {
-      const match = line.match(/^(\d+)(?:\/(\d+))?\s+(.*)$/);
-      if (!match) {
-        continue;
-      }
-      const factor = Number(match[1]) / Number(match[2] ?? 1);
-      if (factor === 1) {
-        basePu.name = match[3];
-      } else {
-        pus.push({
-          name: match[3],
-          amount_display: formatNumber(
-            this.barcode.amount * factor,
-            this.barcode.qu_id,
-          ),
-          amount: barcodeAmountStockUnits * factor,
-        });
-      }
-    }
-    return orderPackagingUnits(pus, basePu);
-  }
-
-  private buildProductDetailsPackagingUnits(
-    quStockquConversionFactorMap: QutoStockQuConversionFactorMap,
-  ): GrocyPackagingUnits {
-    const quickCAmount = this.productDetails.product.quick_consume_amount;
-    const quicksimplePus = [
-      {
-        name: "Quick C",
-        amount: quickCAmount,
-      },
-    ];
-
-    const quickOAmount = this.productDetails.product.quick_open_amount;
-    if (quickOAmount !== quickCAmount) {
-      quicksimplePus.push(
-        {
-          name: "Quick O",
-          amount: quickOAmount,
-        },
-      );
-    }
-
-    const quickPus: GrocyPackagingUnit[] = quicksimplePus.map(
-      (simplePu) => ({
-        name: simplePu.name,
-        amount_display: formatNumber(
-          simplePu.amount /
-            quStockquConversionFactorMap.get(
-              this.productDetails.product.qu_id_consume,
-            )!,
-          this.productDetails.product.qu_id_consume,
-        ),
-        amount: simplePu.amount,
-      }),
-    );
-    // "Quick C" is the consume default, so it is the base unit.
-    return orderPackagingUnits(quickPus, quickPus[0]);
-  }
-
   async build(): Promise<GrocyPackagingUnits> {
     const quStockquConversionFactorMap = await this
       .quStockquConversionFactorMapPromise;
-    let pus = this.buildBarcodePackagingUnits(quStockquConversionFactorMap);
-    if (pus === undefined) {
-      pus = this.buildProductDetailsPackagingUnits(
+    // The barcode's own units where it declares any, else the product's
+    // quick amounts.
+    return barcodePackagingUnits(this.barcode, quStockquConversionFactorMap) ??
+      productDetailsPackagingUnits(
+        this.productDetails,
         quStockquConversionFactorMap,
       );
-    }
-    return pus;
   }
 }
