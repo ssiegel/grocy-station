@@ -125,6 +125,7 @@ more than once gets a row per item, each a separate intention to buy.
                 <div style="grid-area: {i * 2 + 2} / 3" class="remove">
                     <ActionButton
                         danger
+                        subtle
                         disabled={productState.progress != 0}
                         onclick={() =>
                             productState.removeShoppingListItem(entry.item.id)}

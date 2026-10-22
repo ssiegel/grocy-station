@@ -63,10 +63,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
          the one thing worse than a small one. -->
     <ActionButton
         danger
+        compact
         disabled={!productState.consumeValid || productState.progress != 0}
         onclick={async () => productState.doConsume(false, true)}
         label="Consume as spoiled"
     >
+        <svg inline-src="spoiled-fa" height="1em" fill="currentColor" />
         Spoiled
     </ActionButton>
     <ActionButton

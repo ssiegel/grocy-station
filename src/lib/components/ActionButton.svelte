@@ -30,10 +30,7 @@ quiet enough that a screenful of them does not shout.
          * Keeps the full outline weight, unlike `subtle`.
          */
         compact?: boolean;
-        /**
-         * Destructive variant. Tinted, and `subtle` besides, so that it
-         * cannot be hit by muscle memory aimed at the action beside it.
-         */
+        /** Destructive variant. Tints the label and icon. */
         danger?: boolean;
         /**
          * Drops the button's own outline and corners, for use as one cell of
@@ -57,7 +54,7 @@ quiet enough that a screenful of them does not shout.
 
 <button
     class:compact
-    class:subtle={subtle || danger}
+    class:subtle
     class:danger
     class:cell
     {disabled}
