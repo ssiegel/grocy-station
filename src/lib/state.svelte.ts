@@ -296,13 +296,14 @@ export class ProductState extends State {
       if (idx < this.selectedStockEntryIndex) {
         entry.amount_allotted = 0;
       } else {
-        // Quantized at every step: the running remainder is a difference of
-        // decimals, and subtracting in binary floating point accumulates the
-        // error that would otherwise keep it from ever reaching zero.
-        entry.amount_allotted = quantizeAmount(
-          Math.min(entry.amount, remaining),
-        );
-        remaining = quantizeAmount(remaining - entry.amount_allotted);
+        // Taking the whole entry allots exactly its amount, untouched: it
+        // came from Grocy and is what Grocy expects back. Only a part of an
+        // entry is quantized, being a composed amount like any other.
+        entry.amount_allotted = entry.amount <= remaining
+          ? entry.amount
+          : quantizeAmount(remaining);
+        // Left raw; the tolerance below absorbs the resulting error.
+        remaining -= entry.amount_allotted;
       }
     }
 
