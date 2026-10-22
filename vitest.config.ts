@@ -26,6 +26,7 @@ export default defineConfig({
     include: ["src/**/*.{test,svelte.test}.ts"],
     // Component tests need a DOM; the pure ones do not care.
     environment: "jsdom",
+    setupFiles: ["src/vitest-setup.ts"],
   },
   resolve: {
     alias: {
