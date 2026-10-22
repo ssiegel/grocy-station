@@ -55,7 +55,7 @@ per list.
 <div class="container" bind:this={container}>
     <div class="split" class:disabled>
         <ActionButton
-            subtle
+            compact
             cell
             {disabled}
             onclick={() => add(primary.id)}
@@ -65,7 +65,7 @@ per list.
         </ActionButton>
         {#if others.length}
             <ActionButton
-                subtle
+                compact
                 cell
                 {disabled}
                 onclick={() => (menuOpen = !menuOpen)}
@@ -97,9 +97,18 @@ per list.
 </div>
 
 <style>
+    /* Both this and the group below stretch, so the cells inherit a definite
+     * height from the header row rather than sizing themselves from their
+     * labels. Without it they would collapse to their content and the split
+     * button would stand shorter than the buttons beside it. */
     .container {
         position: relative;
         display: flex;
+        /* Both are needed: align-self takes the height offered by the
+         * surrounding row, align-items passes it on to the group inside.
+         * Either one alone leaves the cells sized to their labels. */
+        align-self: stretch;
+        align-items: stretch;
     }
 
     /* The two halves read as one control, so the group draws the outline
@@ -108,6 +117,7 @@ per list.
     .split {
         display: inline-flex;
         flex-direction: row;
+        align-items: stretch;
         overflow: hidden;
         border: 2px solid var(--color-primary-dark);
         border-radius: 0.25rem;
@@ -166,8 +176,8 @@ per list.
         padding-inline: 0.5rem;
         border-radius: 0.25rem;
         color: var(--color-primary-lighter);
-        font-size: var(--text-xl);
-        line-height: var(--text-xl--line-height);
+        font-size: var(--text-lg);
+        line-height: var(--text-lg--line-height);
         text-align: left;
     }
 
@@ -177,6 +187,7 @@ per list.
 
     .option-amount {
         color: var(--color-label-fg);
+        font-size: var(--text-sm);
         font-style: italic;
         white-space: nowrap;
     }

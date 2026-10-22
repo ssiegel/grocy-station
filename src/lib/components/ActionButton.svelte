@@ -26,6 +26,11 @@ quiet enough that a screenful of them does not shout.
          */
         subtle?: boolean;
         /**
+         * Sized to sit in a section header without setting its height.
+         * Keeps the full outline weight, unlike `subtle`.
+         */
+        compact?: boolean;
+        /**
          * Destructive variant. Tinted, and `subtle` besides, so that it
          * cannot be hit by muscle memory aimed at the action beside it.
          */
@@ -44,12 +49,14 @@ quiet enough that a screenful of them does not shout.
         disabled = false,
         hidden = false,
         subtle = false,
+        compact = false,
         danger = false,
         cell = false,
     }: Props = $props();
 </script>
 
 <button
+    class:compact
     class:subtle={subtle || danger}
     class:danger
     class:cell
@@ -88,12 +95,26 @@ quiet enough that a screenful of them does not shout.
         background-color: var(--color-shade-high);
     }
 
+    /* Stretches to the row's height rather than sizing from its own label,
+     * so a row of these reads as one set regardless of what each says.
+     * Vertical padding is deliberately absent: it would fight the stretch. */
+    .compact {
+        height: auto;
+        align-self: stretch;
+        padding-block: 0;
+        padding-inline: 0.75rem;
+        font-size: var(--text-lg);
+        line-height: 1.1;
+    }
+
     .subtle {
         height: auto;
-        padding: 0.25rem 0.75rem;
+        align-self: stretch;
+        padding-block: 0;
+        padding-inline: 0.75rem;
         border-width: 1px;
-        font-size: var(--text-xl);
-        line-height: var(--text-xl--line-height);
+        font-size: var(--text-sm);
+        line-height: 1.1;
     }
 
     .danger {

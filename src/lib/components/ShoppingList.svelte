@@ -190,6 +190,11 @@ more than once gets a row per item, each a separate intention to buy.
     .remove {
         position: relative;
         z-index: 10;
+        display: flex;
+        /* Gives the button a definite height to stretch into, so it matches
+         * the one in the header rather than shrinking to fit its label. */
+        align-items: stretch;
+        height: 1.75rem;
         padding: 0.125rem 0.25rem;
         justify-self: end;
     }

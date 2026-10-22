@@ -13,8 +13,10 @@
    * a size without its line height changes the vertical rhythm. */
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.33333;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.46667;
   --text-lg: 1.125rem;
-  --text-lg--line-height: 1.55556;
+  --text-lg--line-height: 1.4;
   --text-xl: 1.25rem;
   --text-xl--line-height: 1.4;
   --text-2xl: 1.5rem;
@@ -77,6 +79,10 @@
   /* Marker dot on a selected (light) cell. Dark, since it sits on the
    * button palette rather than on the body. */
   --color-marker-on-selected: hsla(230, 7%, 0%, 0.45);
+  /* Marker dot on an unselected cell, and its halo. Sage, to read as a
+   * standing annotation rather than as another selectable thing. */
+  --color-marker: hsla(103, 25%, 43%, 1);
+  --color-marker-glow: hsla(110, 24%, 42%, 0.25);
 }
 
 /* Reset, deliberately scoped to the elements this app actually renders

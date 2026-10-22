@@ -66,12 +66,16 @@ actions beside it operable without collapsing what they act on.
 </div>
 
 <style>
+    /* The height is fixed rather than derived from the contents, so that it
+     * does not change when the actions appear on expanding. It fits the
+     * tallest thing the bar can hold, which is the compact action button. */
     .header {
         display: flex;
         flex-direction: row;
         gap: 0.5rem;
         align-items: center;
-        padding: 0.25rem 0.5rem;
+        min-height: 2.625rem;
+        padding: 0.1875rem 0.5rem;
         color: var(--color-container-fg);
         background-color: var(--color-container-bg-default);
     }
@@ -97,7 +101,10 @@ actions beside it operable without collapsing what they act on.
         transform: rotate(90deg);
     }
 
+    /* A tighter line than the body's, so the title sets a bar height close
+     * to its own cap height rather than carrying the body's leading. */
     .label {
+        line-height: 1.2;
         white-space: nowrap;
     }
 
@@ -107,20 +114,25 @@ actions beside it operable without collapsing what they act on.
         overflow: hidden;
         min-width: 0;
         font-size: var(--text-xl);
-        line-height: var(--text-xl--line-height);
+        line-height: 1.2;
         color: var(--color-label-fg);
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
+    /* align-self takes the bar's height, align-items passes it to the
+     * buttons inside, which stretch into it rather than sizing from their
+     * own labels. */
     .actions {
         display: flex;
         flex-direction: row;
         gap: 0.5rem;
         flex-shrink: 0;
-        align-items: center;
-        /* Lets the buttons fill the bar height. */
         align-self: stretch;
+        align-items: stretch;
+        /* Header actions are the operative controls of the section, so they
+         * carry more weight than the title that names it. */
+        font-weight: 600;
     }
 
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */

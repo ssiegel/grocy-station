@@ -49,6 +49,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         label="Undo"
         >
         <svg inline-src="undo-fa" height="0.75em" fill="currentColor" />
+        Undo
     </ActionButton>
 {/snippet}
 

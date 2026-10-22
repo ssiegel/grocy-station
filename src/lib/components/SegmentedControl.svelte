@@ -96,8 +96,10 @@ caller's values need not be distinct.
         line-height: var(--text-xl--line-height);
     }
 
-    /* Marks the default option, so that a non-default selection is
-     * recognisable as a departure from it. */
+    /* Always on the default cell, so the way back to it stays findable.
+     * Lit while the selection is elsewhere; dark and unhaloed once the
+     * default is itself selected, where it has nothing left to point out
+     * but still marks which cell is the default one. */
     .marker {
         position: absolute;
         top: 0.25rem;
@@ -105,12 +107,14 @@ caller's values need not be distinct.
         width: 0.375rem;
         height: 0.375rem;
         border-radius: 50%;
-        background-color: var(--color-primary-dark);
+        background-color: var(--color-marker);
+        box-shadow: 0 0 0 2px var(--color-marker-glow);
         pointer-events: none;
     }
 
     .cell.selected .marker {
         background-color: var(--color-marker-on-selected);
+        box-shadow: none;
     }
 
     /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
