@@ -154,12 +154,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <div
                     style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
                     class="target"
-                    data-allot={
-                        productState.consumeValid && entry.amount_allotted > 0
-                            ? entry.amount_allotted < entry.amount
-                                ? 'partial'
-                                : 'full'
-                            : 'none'
+                    class:marked={
+                        productState.consumeValid &&
+                        entry.amount_allotted > 0 &&
+                        entry.amount_allotted >= entry.amount
+                    }
+                    class:marked-partial={
+                        productState.consumeValid &&
+                        entry.amount_allotted > 0 &&
+                        entry.amount_allotted < entry.amount
                     }
                     use:pressaction
                     onlongpress={() => {stockEntryPressed(i); stockEntryLongPressed(entry)}}
@@ -186,24 +189,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         padding-bottom: 0.25rem;
     }
 
-    /* Press target overlaying the row; the left border marks allotment. */
-    .target {
-        z-index: 10;
-        border-left: 4px none var(--color-yellow-500);
-    }
-
-    .target[data-allot="full"] {
-        border-left-style: solid;
-    }
-
-    .target[data-allot="partial"] {
-        border-left-style: dotted;
-    }
-
-    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
-    @media (hover: hover) {
-        .target:hover {
-            background-color: var(--color-shade-default);
-        }
+    /* The row marker means "allotted for the pending consumption", solid
+     * when the entry is taken whole and dotted when only partly. */
+    .grid :global(.target) {
+        color: var(--color-yellow-500);
     }
 </style>

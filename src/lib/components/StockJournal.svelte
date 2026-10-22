@@ -96,7 +96,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <div
                 style="grid-area: {i * 2 + 2} / 1 / {i * 2 + 4} / 6"
                 class="target"
-                data-selected={productState.selectedStockLogEntryIndex === i}
+                class:marked={productState.selectedStockLogEntryIndex === i}
                 use:pressaction
                 onlongpress={() => stockLogEntryPressed(i)}
                 onshortpress={() => stockLogEntryPressed(i)}
@@ -114,31 +114,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         grid-template-columns: max-content max-content max-content max-content 1fr;
     }
 
-    /* The stripe phase is inverted relative to the other tables, so that a
-     * journal row does not align with the stock row above it and suggest a
-     * correspondence that is not there. */
-    .grid :global(.stripe) {
-        background-color: var(--color-darken);
-    }
-
-    .grid :global(.stripe.odd) {
-        background-color: var(--color-shade-low);
-    }
-
-    /* Press target overlaying the row; the left border marks the selection. */
-    .target {
-        z-index: 10;
-        border-left: 4px none var(--color-red-500);
-    }
-
-    .target[data-selected="true"] {
-        border-left-style: solid;
-    }
-
-    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
-    @media (hover: hover) {
-        .target:hover {
-            background-color: var(--color-shade-default);
-        }
+    /* The row marker means "selected, and the undo button acts on this". */
+    .grid :global(.target) {
+        color: var(--color-red-500);
     }
 </style>

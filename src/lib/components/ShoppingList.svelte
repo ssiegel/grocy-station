@@ -182,5 +182,4 @@ more than once gets a row per item, each a separate intention to buy.
         padding: 0.125rem 0.25rem;
         justify-self: end;
     }
-
 </style>

@@ -191,6 +191,30 @@ html {
   background-color: var(--color-darken);
 }
 
+/* Press target overlaying a whole row, above the striping that is drawn
+ * behind it. The left border marks the row's state and is colored by the
+ * table, which is the only one that knows what the state means; it stays
+ * hidden until a state class turns it on. */
+.data-grid .target {
+  z-index: 10;
+  border-left: 4px none currentColor;
+}
+
+.data-grid .target.marked {
+  border-left-style: solid;
+}
+
+.data-grid .target.marked-partial {
+  border-left-style: dotted;
+}
+
+/* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
+@media (hover: hover) {
+  .data-grid .target:hover {
+    background-color: var(--color-shade-default);
+  }
+}
+
 /* Stands in for a table with nothing in it. Matches the rows it replaces,
  * so that a section does not shout loudest when it has least to say. */
 .section-empty {
