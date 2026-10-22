@@ -170,10 +170,11 @@ more than once gets a row per item, each a separate intention to buy.
         opacity: 0.6;
     }
 
-    /* Raised above the striping, which is drawn as a row-spanning backdrop. */
+    /* Positioned, which is what lifts the button clear of the striping
+     * drawn across the row: a positioned element paints above every static
+     * sibling, so no z-index is needed to get above a static backdrop. */
     .remove {
         position: relative;
-        z-index: 10;
         display: flex;
         /* Gives the button a definite height to stretch into, so it matches
          * the one in the header rather than shrinking to fit its label. */

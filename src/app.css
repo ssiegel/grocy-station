@@ -191,12 +191,16 @@ html {
   background-color: var(--color-darken);
 }
 
-/* Press target overlaying a whole row, above the striping that is drawn
- * behind it. The left border marks the row's state and is colored by the
- * table, which is the only one that knows what the state means; it stays
- * hidden until a state class turns it on. */
+/* Press target overlaying a whole row. It must stay above the striping and
+ * catch the press, which positioning achieves: a positioned element paints
+ * above every static sibling, where relying on document order alone would
+ * put the target at the mercy of where it happens to sit in the markup.
+ *
+ * The left border marks the row's state and is colored by the table, which
+ * is the only one that knows what the state means; it stays hidden until a
+ * state class turns it on. */
 .data-grid .target {
-  z-index: 10;
+  position: relative;
   border-left: 4px none currentColor;
 }
 

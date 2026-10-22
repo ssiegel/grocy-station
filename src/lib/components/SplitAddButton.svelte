@@ -145,6 +145,9 @@ per list.
         transform: rotate(90deg);
     }
 
+    /* The z-index earns its place here, unlike elsewhere in the table: the
+     * menu hangs out of the section header and over the rows below, which
+     * come later in the document and would otherwise paint on top of it. */
     .menu {
         position: absolute;
         top: calc(100% + 0.25rem);
