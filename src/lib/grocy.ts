@@ -326,6 +326,31 @@ export class GrocyObjectCache {
       ? [...entry.cache.values()] as unknown as GrocyObject
       : undefined;
   }
+
+  /**
+   * Fill the cache without going to the server. For tests.
+   *
+   * Marked as freshly fetched, so a subsequent miss does not trigger a
+   * request. Replaces whatever the entity held.
+   */
+  public static seedForTesting(
+    entity: CacheableEntities,
+    objects: GrocyObject[],
+  ): void {
+    GrocyObjectCache.caches.set(entity, {
+      cache: new Map(objects.map((obj) => [obj.id as number, obj])),
+      lastFetchTime: Date.now(),
+      getPromise: undefined,
+    });
+  }
+
+  /**
+   * Empty the cache. For tests, which would otherwise leak seeded objects
+   * into one another through this module-level state.
+   */
+  public static clearForTesting(): void {
+    GrocyObjectCache.caches.clear();
+  }
 }
 
 export async function fetchProductStock(
