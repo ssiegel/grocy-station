@@ -13,16 +13,25 @@ import type {
 import { formatNumber } from "$lib/format";
 
 /**
- * Order the units by ascending amount and locate the base unit within them,
- * by object identity rather than amount since two units may share one.
+ * Order the units by ascending amount and locate the base and first units
+ * within them, by object identity rather than amount since two units may
+ * share one.
+ *
+ * `units` is taken in the order Grocy declares them, which `firstIndex`
+ * preserves regardless of where ascending order moves that unit to.
  */
 function orderPackagingUnits(
   units: GrocyPackagingUnit[],
   baseUnit: GrocyPackagingUnit,
 ): GrocyPackagingUnits {
+  const firstUnit = units[0];
   // Stable, so units of equal amount keep the order they were declared in.
   const ordered = [...units].sort((a, b) => a.amount - b.amount);
-  return { units: ordered, baseIndex: ordered.indexOf(baseUnit) };
+  return {
+    units: ordered,
+    baseIndex: ordered.indexOf(baseUnit),
+    firstIndex: ordered.indexOf(firstUnit),
+  };
 }
 
 /** Maps a quantity unit id to its conversion factor into stock units. */
@@ -46,13 +55,8 @@ export function barcodePackagingUnits(
   const barcodeAmountStockUnits = barcode.amount *
     quStockquConversionFactorMap.get(barcode.qu_id)!;
 
-  // get pu from barcode qu
-  const basePu = {
-    name: "Barcode PU",
-    amount_display: formatNumber(barcode.amount, barcode.qu_id),
-    amount: barcodeAmountStockUnits,
-  };
-  const pus = [basePu];
+  const pus: GrocyPackagingUnit[] = [];
+  let basePu: GrocyPackagingUnit | undefined;
 
   // get pu from barcode userfields
   for (
@@ -63,17 +67,23 @@ export function barcodePackagingUnits(
       continue;
     }
     const factor = Number(match[1]) / Number(match[2] ?? 1);
+    const pu = {
+      name: match[3],
+      amount_display: formatNumber(barcode.amount * factor, barcode.qu_id),
+      amount: barcodeAmountStockUnits * factor,
+    };
     if (factor === 1) {
-      // The barcode's own amount, named by the userfield rather than
-      // duplicated as a second unit of the same size.
-      basePu.name = match[3];
-    } else {
-      pus.push({
-        name: match[3],
-        amount_display: formatNumber(barcode.amount * factor, barcode.qu_id),
-        amount: barcodeAmountStockUnits * factor,
-      });
+      basePu = pu;
     }
+    pus.push(pu);
+  }
+  if (basePu === undefined) {
+    basePu = {
+      name: "Barcode PU",
+      amount_display: formatNumber(barcode.amount, barcode.qu_id),
+      amount: barcodeAmountStockUnits,
+    };
+    pus.push(basePu);
   }
   return orderPackagingUnits(pus, basePu);
 }

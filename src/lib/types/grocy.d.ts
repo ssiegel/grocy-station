@@ -90,12 +90,20 @@ export type GrocyPackagingUnit = {
   amount_display: string;
 };
 
-/** A product's packaging units together with the one to preselect. */
+/** A product's packaging units together with the ones to mark. */
 export type GrocyPackagingUnits = {
   /** In increasing order of PackagingUnit.amount. */
   units: GrocyPackagingUnit[];
-  /** Index into `units` of the base unit, i.e. the default selection. */
+  /**
+   * Index into `units` of the barcode's own amount, i.e. the one the LED
+   * marks as "scanned".
+   */
   baseIndex: number;
+  /**
+   * Index into `units` of the unit listed first in Grocy, i.e. the one to
+   * preselect.
+   */
+  firstIndex: number;
 };
 export type GrocyData = {
   barcode: GrocyBarcode;

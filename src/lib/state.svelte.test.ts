@@ -35,13 +35,26 @@ describe("composing an amount", () => {
         makePackagingUnit("Carton", 1),
       ],
       baseIndex: 1,
+      firstIndex: 1,
     }));
   });
 
-  test("preselects the base unit rather than the first one", () => {
+  test("preselects the unit declared first", () => {
     expect(state.unitSize()).toBe(1);
     expect(state.quantity()).toBe(1);
     expect(state.consumeAmount).toBe(1);
+  });
+
+  test("preselects a unit other than the base one when it is listed first", () => {
+    state = productState(makeGrocyData({
+      packagingUnits: [
+        makePackagingUnit("Glass", 0.2),
+        makePackagingUnit("Carton", 1),
+      ],
+      baseIndex: 1,
+      firstIndex: 0,
+    }));
+    expect(state.unitSize()).toBe(0.2);
   });
 
   test("multiplies the unit size by the quantity", () => {
@@ -66,7 +79,7 @@ describe("composing an amount", () => {
     expect(state.quantity()).toBe(0);
   });
 
-  test("resetting returns to one base unit", () => {
+  test("resetting returns to the unit declared first", () => {
     state.inputUnitSize = "0.2";
     state.inputQuantity = "7";
     state.resetQuantity();

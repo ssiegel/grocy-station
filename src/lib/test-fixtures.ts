@@ -88,6 +88,8 @@ interface GrocyDataOptions {
   /** Defaults to a single 1-unit packaging unit, which is also the base. */
   packagingUnits?: GrocyPackagingUnit[];
   baseIndex?: number;
+  /** Defaults to the base unit, i.e. no separately-preselected unit. */
+  firstIndex?: number;
   stockAmount?: number;
 }
 
@@ -103,6 +105,7 @@ export function makeGrocyData(options: GrocyDataOptions = {}): GrocyData {
     packaging_units: {
       units,
       baseIndex: options.baseIndex ?? 0,
+      firstIndex: options.firstIndex ?? options.baseIndex ?? 0,
     },
     product_details: {
       product: {

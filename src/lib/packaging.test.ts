@@ -61,6 +61,7 @@ describe("barcodePackagingUnits", () => {
     expect(pus.units).toHaveLength(1);
     expect(pus.units[0]).toMatchObject({ name: "Barcode PU", amount: 2 });
     expect(pus.baseIndex).toBe(0);
+    expect(pus.firstIndex).toBe(0);
   });
 
   test("converts the amount into stock units", () => {
@@ -99,6 +100,26 @@ describe("barcodePackagingUnits", () => {
     // Carton is the base, and ordering has moved it off the front.
     expect(pus.baseIndex).toBe(1);
     expect(pus.units[pus.baseIndex].name).toBe("Carton");
+    expect(pus.firstIndex).toBe(1);
+  });
+
+  test("points firstIndex at the unit declared first even when it is not the base", () => {
+    const pus = barcodePackagingUnits(
+      packagingUnits("4 Pack\n1 Carton\n1/5 Glass"),
+      factors,
+    )!;
+    expect(pus.units[pus.baseIndex].name).toBe("Carton");
+    expect(pus.units[pus.firstIndex].name).toBe("Pack");
+    expect(pus.baseIndex).not.toBe(pus.firstIndex);
+  });
+
+  test("puts the implicit base unit last when no line names it", () => {
+    const pus = barcodePackagingUnits(
+      packagingUnits("4 Pack\n1/5 Glass"),
+      factors,
+    )!;
+    expect(pus.units[pus.baseIndex].name).toBe("Barcode PU");
+    expect(pus.units[pus.firstIndex].name).toBe("Pack");
   });
 
   test("ignores lines it cannot parse", () => {
@@ -131,6 +152,7 @@ describe("barcodePackagingUnits", () => {
       "Second",
       "Barcode PU",
     ]);
+    expect(pus.units[pus.firstIndex].name).toBe("First");
   });
 });
 
@@ -155,6 +177,7 @@ describe("productDetailsPackagingUnits", () => {
     expect(pus.units).toHaveLength(1);
     expect(pus.units[0]).toMatchObject({ name: "Quick C", amount: 0.5 });
     expect(pus.baseIndex).toBe(0);
+    expect(pus.firstIndex).toBe(0);
   });
 
   test("adds the quick open amount when it differs", () => {
@@ -162,10 +185,11 @@ describe("productDetailsPackagingUnits", () => {
     expect(pus.units.map((u) => u.name)).toEqual(["Quick C", "Quick O"]);
   });
 
-  test("keeps Quick C as the base once ordering moves it", () => {
-    // Opening less than is consumed puts Quick O first.
+  test("keeps Quick C as the base and first once ordering moves it", () => {
+    // Opening less than is consumed puts Quick O first in amount order.
     const pus = productDetailsPackagingUnits(details(2, 0.5), factors);
     expect(pus.units.map((u) => u.name)).toEqual(["Quick O", "Quick C"]);
     expect(pus.units[pus.baseIndex].name).toBe("Quick C");
+    expect(pus.units[pus.firstIndex].name).toBe("Quick C");
   });
 });
