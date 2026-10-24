@@ -43,6 +43,28 @@ deno task dev
 deno task dev --open
 ```
 
+Code is formatted with Prettier and linted with ESLint:
+
+```sh
+deno task format          # rewrite the tree
+deno task format:check .  # report only
+deno task lint
+```
+
+Both also run as [pre-commit](https://pre-commit.com/) hooks, together with a
+REUSE compliance check. Install them once per clone with:
+
+```sh
+pre-commit install
+```
+
+The full set of checks, including `deno task check` and the unit tests, runs in
+the `Dockerfile`'s `test` stage, which is what CI invokes:
+
+```sh
+podman build --target test .
+```
+
 ## Building
 
 To create a production build run:

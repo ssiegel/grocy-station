@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: © 2026 Stefan Siegel <ssiegel@sdas.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Formatting and licensing only.
+# Type checking and the unit tests are slower and run in the Dockerfile's
+# "test" stage.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-yaml
+      - id: check-json
+        # tsconfig.json is JSONC, whose comments this hook rejects.
+        exclude: '^tsconfig\.json$'
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: https://codeberg.org/fsfe/reuse-tool
+    rev: v6.2.0
+    hooks:
+      - id: reuse
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: deno task format:check
+        language: system
+        types_or: [ts, javascript, svelte, css, json, yaml, markdown, html]
+        exclude: '^(deno\.lock|src/lib/types/grocy-api\.d\.ts)$'
+
+      - id: eslint
+        name: eslint
+        # --no-warn-ignored: passing a staged file that eslint.config.js
+        # ignores is expected here, and would otherwise trip --max-warnings 0.
+        entry: deno task lint --no-warn-ignored
+        language: system
+        types_or: [ts, javascript, svelte]
