@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-on: [ push ]
+on: [push]
 
 env:
   image: harbor.homelab.sdas.net/library/grocy-station
@@ -15,7 +15,7 @@ jobs:
   # way. Runs on one architecture only: the code under test is
   # architecture-independent, so a second run would only cost time.
   test:
-    runs-on: [ docker, amd64 ]
+    runs-on: [docker, amd64]
     container:
       image: ${{ env.act_base_image }}
 
@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64
-          context: "{{defaultContext}}:."
+          context: '{{defaultContext}}:.'
           file: ./Dockerfile
           target: test
           build-args: |
@@ -54,7 +54,7 @@ jobs:
           outputs: type=cacheonly
 
   build-amd64:
-    runs-on: [ docker, amd64 ]
+    runs-on: [docker, amd64]
     container:
       image: ${{ env.act_base_image }}
       env:
@@ -84,7 +84,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/${{ env.arch }}
-          context: "{{defaultContext}}:."
+          context: '{{defaultContext}}:.'
           file: ./Dockerfile
           build-args: |
             GIT_HEAD=${{ github.sha }}
@@ -95,7 +95,7 @@ jobs:
           outputs: type=cacheonly
 
   build-arm64:
-    runs-on: [ docker, arm64 ]
+    runs-on: [docker, arm64]
     container:
       image: ${{ env.act_base_image }}
       env:
@@ -109,48 +109,48 @@ jobs:
   # letting them run alongside the tests costs nothing and keeps the
   # pipeline as short as the slowest of the two.
   build-manifest:
-    needs: [ test, build-amd64, build-arm64 ]
+    needs: [test, build-amd64, build-arm64]
     runs-on: docker
     container:
       image: ${{ env.act_base_image }}
 
     steps:
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.image }}
-        tags: |
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=ref,event=branch
-          type=ref,event=tag
-          type=ref,event=pr
-          type=sha
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Login to registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.image }}
-        username: ${{ env.registry_user }}
-        password: ${{ secrets.registry_token }}
+      - name: Login to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.image }}
+          username: ${{ env.registry_user }}
+          password: ${{ secrets.registry_token }}
 
-    - name: Build and push
-      id: build
-      uses: docker/build-push-action@v6
-      with:
-        platforms: linux/amd64,linux/arm64
-        context: "{{defaultContext}}:."
-        file: ./Dockerfile
-        build-args: |
-          GIT_HEAD=${{ github.sha }}
-        provenance: false
-        sbom: false
-        cache-from: |
-          ${{ needs.build-amd64.outputs.cache }}
-          ${{ needs.build-arm64.outputs.cache }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        push: true
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          context: '{{defaultContext}}:.'
+          file: ./Dockerfile
+          build-args: |
+            GIT_HEAD=${{ github.sha }}
+          provenance: false
+          sbom: false
+          cache-from: |
+            ${{ needs.build-amd64.outputs.cache }}
+            ${{ needs.build-arm64.outputs.cache }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
