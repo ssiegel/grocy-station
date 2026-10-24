@@ -79,15 +79,20 @@ more than once gets a row per item, each a separate intention to buy.
 
 {#snippet actions()}
     {#if primary !== undefined}
-        <SplitAddButton
-            {primary}
-            {others}
-            disabled={!Number.isFinite(productState.consumeAmount) ||
-                productState.consumeAmount <= 0 ||
-                productState.progress != 0}
-            formatAmount={formatListTotal}
-            onadd={(listId) => productState.addToShoppingList(listId)}
-        />
+        <!-- The productState instance is only ever replaced by a fresh scan,
+        closing a possibly left-open menu. A same-session refresh mutates
+        the existing productState in place, keeping the menu open. -->
+        {#key productState}
+            <SplitAddButton
+                {primary}
+                {others}
+                disabled={!Number.isFinite(productState.consumeAmount) ||
+                    productState.consumeAmount <= 0 ||
+                    productState.progress != 0}
+                formatAmount={formatListTotal}
+                onadd={(listId) => productState.addToShoppingList(listId)}
+            />
+        {/key}
     {/if}
 {/snippet}
 
