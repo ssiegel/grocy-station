@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import { onMount, onDestroy, untrack } from "svelte";
     import { setupMqtt, disconnectMqtt } from "$lib/mqtt";
     import { setupDbEvents, disconnectDbEvents } from "$lib/db-events";
-    import { screenOn } from "$lib/screen";
+    import { screenOn, onScreenOff } from "$lib/screen";
     import {
         GrocyObjectCache,
     } from "$lib/grocy";
@@ -23,6 +23,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     const page = new Page();
     const pageState = $derived(page.state);
 
+    const unsubscribeScreenOff = onScreenOff(() => page.toWaitingState());
 
     //$inspect(pageState.progress).with(console.trace)
 
@@ -67,6 +68,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         stopAutoReload();
         disconnectDbEvents();
         disconnectMqtt(page);
+        unsubscribeScreenOff();
     });
 </script>
 
@@ -87,7 +89,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             {pageState.message}
         </div>
     {:else if pageState instanceof MessageState}
-        <div class="message">
+        <div
+            class="message"
+            role="button"
+            tabindex="0"
+            onpointerdown={() => screenOn(5_000)}
+        >
             {pageState.message}
         </div>
     {:else if pageState instanceof ProductState}

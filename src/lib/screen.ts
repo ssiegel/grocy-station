@@ -3,6 +3,18 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+type ScreenOffListener = () => void;
+const screenOffListeners = new Set<ScreenOffListener>();
+
+/**
+ * Registers *listener* to run whenever the backlight turns off.
+ * Returns a function that unregisters it.
+ */
+export function onScreenOff(listener: ScreenOffListener): () => void {
+  screenOffListeners.add(listener);
+  return () => screenOffListeners.delete(listener);
+}
+
 function screenOff() {
   // Calling window.fully?.turnScreenOff?.() here would be straightforward, but we're
   // running into (deep) sleep and reactivation issues, so just turn off the backlight.
@@ -10,6 +22,9 @@ function screenOff() {
   window.fully?.runSuCommand?.(
     "printf 0 > /sys/class/leds/lcd-backlight/brightness",
   );
+  for (const listener of screenOffListeners) {
+    listener();
+  }
 }
 export const screenOn = (() => {
   let screentimeout = undefined as ReturnType<typeof setTimeout> | undefined;
