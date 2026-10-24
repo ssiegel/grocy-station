@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2024 [these people](https://github.com/sveltejs/cli/graphs/contributors)
 // SPDX-FileCopyrightText: © 2026 Stefan Siegel <ssiegel@sdas.net>
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import inlineSvg from "@svelte-put/inline-svg/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
