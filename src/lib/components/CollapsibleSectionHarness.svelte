@@ -9,34 +9,29 @@ cannot be supplied from a test directly.
 -->
 
 <script lang="ts">
-    import CollapsibleSection from "$lib/components/CollapsibleSection.svelte";
+	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
 
-    interface Props {
-        expanded?: boolean;
-        summary?: string;
-        onclose?: () => void;
-        /** Given a handler, the header renders an action calling it. */
-        onaction?: () => void;
-    }
+	interface Props {
+		expanded?: boolean;
+		summary?: string;
+		onclose?: () => void;
+		/** Given a handler, the header renders an action calling it. */
+		onaction?: () => void;
+	}
 
-    let {
-        expanded = $bindable(true),
-        summary,
-        onclose,
-        onaction,
-    }: Props = $props();
+	let { expanded = $bindable(true), summary, onclose, onaction }: Props = $props();
 </script>
 
 {#snippet actions()}
-    <button onclick={onaction}>Consume</button>
+	<button onclick={onaction}>Consume</button>
 {/snippet}
 
 <CollapsibleSection
-    title="Stock"
-    {summary}
-    bind:expanded
-    actions={onaction ? actions : undefined}
-    {onclose}
+	title="Stock"
+	{summary}
+	bind:expanded
+	actions={onaction ? actions : undefined}
+	{onclose}
 >
-    <div data-testid="body">2 entries</div>
+	<div data-testid="body">2 entries</div>
 </CollapsibleSection>

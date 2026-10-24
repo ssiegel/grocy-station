@@ -5,212 +5,204 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
 <script lang="ts">
-    import { amountsEqual, formatFactor } from "$lib/amount";
-    import { formatUnit, formatNumber } from "$lib/format";
-    import { type ProductState } from "$lib/state.svelte";
-    import Stock from "$lib/components/Stock.svelte";
-    import StockJournal from "$lib/components/StockJournal.svelte";
-    import ShoppingList from "$lib/components/ShoppingList.svelte";
-    import SegmentedControl from "$lib/components/SegmentedControl.svelte";
+	import { amountsEqual, formatFactor } from '$lib/amount';
+	import { formatUnit, formatNumber } from '$lib/format';
+	import { type ProductState } from '$lib/state.svelte';
+	import Stock from '$lib/components/Stock.svelte';
+	import StockJournal from '$lib/components/StockJournal.svelte';
+	import ShoppingList from '$lib/components/ShoppingList.svelte';
+	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 
-    let { pageState: productState }: { pageState: ProductState } = $props();
-    const productData = $derived(productState.grocyData);
-    const productDetails = $derived(productData.product_details)
-    const packagingUnits = $derived(productData.packaging_units);
+	let { pageState: productState }: { pageState: ProductState } = $props();
+	const productData = $derived(productState.grocyData);
+	const productDetails = $derived(productData.product_details);
+	const packagingUnits = $derived(productData.packaging_units);
 
-    // The unit size is a free-text field, so the selection follows the
-    // amount typed rather than the other way round. Matched with a
-    // tolerance, since the field holds a rounded rendering of the unit size.
-    const selectedPackagingUnitIndex = $derived(
-        packagingUnits.units.findIndex(
-            (pu) => amountsEqual(pu.amount, productState.unitSize()),
-        ),
-    );
+	// The unit size is a free-text field, so the selection follows the
+	// amount typed rather than the other way round. Matched with a
+	// tolerance, since the field holds a rounded rendering of the unit size.
+	const selectedPackagingUnitIndex = $derived(
+		packagingUnits.units.findIndex((pu) => amountsEqual(pu.amount, productState.unitSize()))
+	);
 </script>
 
 <div class="titlebar">
-    <div>{productDetails.product.name ?? "\u00a0"}</div>
-    {#if productData.product_group?.name}
-        <div class="product-group">
-            {productData.product_group.name}
-        </div>
-    {/if}
+	<div>{productDetails.product.name ?? '\u00a0'}</div>
+	{#if productData.product_group?.name}
+		<div class="product-group">
+			{productData.product_group.name}
+		</div>
+	{/if}
 </div>
 
 <div class="panel">
-    {#if productData.barcode !== undefined && !productData.barcode.barcode.startsWith("grcy:p:")}
-        <div class="barcode">
-            {productData.barcode.barcode}
-            <span class="note">{productData.barcode.note}</span>
-        </div>
-    {/if}
-    <SegmentedControl
-        options={packagingUnits.units.map((pu) => ({
-            label: pu.name,
-            sublabel: pu.amount_display,
-        }))}
-        selectedIndex={selectedPackagingUnitIndex}
-        defaultIndex={packagingUnits.baseIndex}
-        onselect={(i) =>
-            (productState.inputUnitSize = formatFactor(
-                packagingUnits.units[i].amount,
-            ))}
-    />
-    <div class="amount-row">
-        <div>
-            <label>
-                <span class="field-label">Unit size</span>
-                <br />
-                <input
-                    bind:value={productState.inputUnitSize}
-                    type="text"
-                    inputmode="numeric"
-                    size="4"
-                    class:invalid={!Number.isFinite(productState.unitSize())}
-                />
-                {formatUnit(productDetails.quantity_unit_stock.id)}
-            </label>
-        </div>
-        <div><span>×</span></div>
-        <div>
-            <label>
-                <span class="field-label">Quantity</span>
-                <br />
-                <input
-                    bind:value={productState.inputQuantity}
-                    type="text"
-                    inputmode="numeric"
-                    size="4"
-                    class:invalid={!Number.isFinite(productState.quantity())}
-                />
-            </label>
-        </div>
-        <div class="stepper">
-            <button
-                disabled={!Number.isFinite(productState.quantity())}
-                onclick={() => productState.increaseQuantity()}>+</button
-            >
-            <button
-                disabled={!Number.isFinite(productState.quantity())}
-                onclick={() => productState.decreaseQuantity()}>−</button
-            >
-        </div>
-        {#if Number.isFinite(productState.consumeAmount)}
-            <div><span>=</span></div>
-            <div>
-                <span class:invalid={!productState.consumeValid}
-                    >{formatNumber(
-                        productState.consumeAmount,
-                        productDetails.quantity_unit_stock.id,
-                    )}</span
-                >
-            </div>
-        {/if}
-    </div>
-    <Stock {productState} />
-    <ShoppingList {productState} />
-    <StockJournal {productState} />
+	{#if productData.barcode !== undefined && !productData.barcode.barcode.startsWith('grcy:p:')}
+		<div class="barcode">
+			{productData.barcode.barcode}
+			<span class="note">{productData.barcode.note}</span>
+		</div>
+	{/if}
+	<SegmentedControl
+		options={packagingUnits.units.map((pu) => ({
+			label: pu.name,
+			sublabel: pu.amount_display
+		}))}
+		selectedIndex={selectedPackagingUnitIndex}
+		defaultIndex={packagingUnits.baseIndex}
+		onselect={(i) => (productState.inputUnitSize = formatFactor(packagingUnits.units[i].amount))}
+	/>
+	<div class="amount-row">
+		<div>
+			<label>
+				<span class="field-label">Unit size</span>
+				<br />
+				<input
+					bind:value={productState.inputUnitSize}
+					type="text"
+					inputmode="numeric"
+					size="4"
+					class:invalid={!Number.isFinite(productState.unitSize())}
+				/>
+				{formatUnit(productDetails.quantity_unit_stock.id)}
+			</label>
+		</div>
+		<div><span>×</span></div>
+		<div>
+			<label>
+				<span class="field-label">Quantity</span>
+				<br />
+				<input
+					bind:value={productState.inputQuantity}
+					type="text"
+					inputmode="numeric"
+					size="4"
+					class:invalid={!Number.isFinite(productState.quantity())}
+				/>
+			</label>
+		</div>
+		<div class="stepper">
+			<button
+				disabled={!Number.isFinite(productState.quantity())}
+				onclick={() => productState.increaseQuantity()}>+</button
+			>
+			<button
+				disabled={!Number.isFinite(productState.quantity())}
+				onclick={() => productState.decreaseQuantity()}>−</button
+			>
+		</div>
+		{#if Number.isFinite(productState.consumeAmount)}
+			<div><span>=</span></div>
+			<div>
+				<span class:invalid={!productState.consumeValid}
+					>{formatNumber(productState.consumeAmount, productDetails.quantity_unit_stock.id)}</span
+				>
+			</div>
+		{/if}
+	</div>
+	<Stock {productState} />
+	<ShoppingList {productState} />
+	<StockJournal {productState} />
 </div>
 
 <style>
-    .titlebar {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.25rem 0.5rem;
-        color: var(--color-container-fg);
-        background-color: var(--color-container-bg-default);
-    }
+	.titlebar {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.25rem 0.5rem;
+		color: var(--color-container-fg);
+		background-color: var(--color-container-bg-default);
+	}
 
-    .product-group {
-        font-size: var(--text-xl);
-        line-height: var(--text-xl--line-height);
-        white-space: nowrap;
-    }
+	.product-group {
+		font-size: var(--text-xl);
+		line-height: var(--text-xl--line-height);
+		white-space: nowrap;
+	}
 
-    .panel {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        align-items: stretch;
-        padding-inline: 0.5rem;
-        font-size: var(--text-2xl);
-        line-height: var(--text-2xl--line-height);
-        color: var(--color-label-fg);
-    }
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		align-items: stretch;
+		padding-inline: 0.5rem;
+		font-size: var(--text-2xl);
+		line-height: var(--text-2xl--line-height);
+		color: var(--color-label-fg);
+	}
 
-    .barcode {
-        font-size: var(--text-xl);
-        line-height: var(--text-xl--line-height);
-    }
+	.barcode {
+		font-size: var(--text-xl);
+		line-height: var(--text-xl--line-height);
+	}
 
-    .note {
-        font-style: italic;
-    }
+	.note {
+		font-style: italic;
+	}
 
-    .amount-row {
-        display: flex;
-        flex-direction: row;
-        gap: 0.5rem;
-        align-items: center;
-        justify-content: flex-start;
-    }
+	.amount-row {
+		display: flex;
+		flex-direction: row;
+		gap: 0.5rem;
+		align-items: center;
+		justify-content: flex-start;
+	}
 
-    .field-label {
-        font-size: var(--text-xl);
-        line-height: var(--text-xl--line-height);
-    }
+	.field-label {
+		font-size: var(--text-xl);
+		line-height: var(--text-xl--line-height);
+	}
 
-    input {
-        padding: 0.25rem 0.5rem;
-        color: var(--color-input-fg);
-        background-color: var(--color-input-bg-default);
-    }
+	input {
+		padding: 0.25rem 0.5rem;
+		color: var(--color-input-fg);
+		background-color: var(--color-input-bg-default);
+	}
 
-    input:focus {
-        background-color: var(--color-input-bg-focus);
-    }
+	input:focus {
+		background-color: var(--color-input-bg-focus);
+	}
 
-    input:active {
-        background-color: var(--color-input-bg-active);
-    }
+	input:active {
+		background-color: var(--color-input-bg-active);
+	}
 
-    .invalid {
-        color: var(--color-red-500);
-    }
+	.invalid {
+		color: var(--color-red-500);
+	}
 
-    .stepper {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        align-self: stretch;
-    }
+	.stepper {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		align-self: stretch;
+	}
 
-    .stepper button {
-        flex: 1;
-        padding-inline: 0.5rem;
-        color: var(--color-input-fg);
-        background-color: var(--color-input-bg-default);
-    }
+	.stepper button {
+		flex: 1;
+		padding-inline: 0.5rem;
+		color: var(--color-input-fg);
+		background-color: var(--color-input-bg-default);
+	}
 
-    .stepper button:disabled {
-        color: var(--color-input-bg-focus);
-    }
+	.stepper button:disabled {
+		color: var(--color-input-bg-focus);
+	}
 
-    .stepper button:focus {
-        background-color: var(--color-input-bg-focus);
-    }
+	.stepper button:focus {
+		background-color: var(--color-input-bg-focus);
+	}
 
-    .stepper button:active {
-        background-color: var(--color-input-bg-active);
-    }
+	.stepper button:active {
+		background-color: var(--color-input-bg-active);
+	}
 
-    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
-    @media (hover: hover) {
-        input:hover,
-        .stepper button:not(:disabled):hover {
-            background-color: var(--color-input-bg-hover);
-        }
-    }
+	/* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
+	@media (hover: hover) {
+		input:hover,
+		.stepper button:not(:disabled):hover {
+			background-color: var(--color-input-bg-hover);
+		}
+	}
 </style>

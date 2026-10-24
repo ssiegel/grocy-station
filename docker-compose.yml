@@ -28,10 +28,7 @@ services:
     tmpfs:
       - /config
     healthcheck:
-      test: [
-        "CMD-SHELL",
-        "curl -fsI -o /dev/null http://localhost:8080/",
-      ]
+      test: ['CMD-SHELL', 'curl -fsI -o /dev/null http://localhost:8080/']
       interval: 10s
       retries: 10
       timeout: 60s

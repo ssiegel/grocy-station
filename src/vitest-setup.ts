@@ -5,9 +5,9 @@
 // Unmounts whatever a test rendered once it finishes. Without it every
 // render accumulates in the same document and a query for "the button"
 // finds one per test that has run so far.
-import "@testing-library/svelte/vitest";
+import '@testing-library/svelte/vitest';
 
 // Matchers that assert against the DOM rather than against object shape,
 // notably toBeVisible, which accounts for the hidden attribute a collapsed
 // section uses.
-import "@testing-library/jest-dom/vitest";
+import '@testing-library/jest-dom/vitest';

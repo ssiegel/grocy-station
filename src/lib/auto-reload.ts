@@ -17,45 +17,45 @@ const CLIENT_VERSION = __APP_VERSION__;
 let checkInterval: ReturnType<typeof setInterval>;
 
 async function checkServerVersion() {
-    try {
-        const response = await fetch(HEALTH_ENDPOINT, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache'
-            }
-        });
+	try {
+		const response = await fetch(HEALTH_ENDPOINT, {
+			cache: 'no-store',
+			headers: {
+				'Cache-Control': 'no-cache'
+			}
+		});
 
-        if (!response.ok)
-            throw new Error(`Health check failed: ${response.status}`);
+		if (!response.ok) throw new Error(`Health check failed: ${response.status}`);
 
-        const data = await response.json();
+		const data = await response.json();
 
-        if (data.version !== CLIENT_VERSION) {
-            console.log('Server version mismatch detected, reloading page...', {
-                clientVersion: CLIENT_VERSION,
-                serverVersion: data.version
-            });
-            window.location.reload();
-        }
-    } catch (error) {
-        console.warn('Health check error:', error);
-    }
+		if (data.version !== CLIENT_VERSION) {
+			console.log('Server version mismatch detected, reloading page...', {
+				clientVersion: CLIENT_VERSION,
+				serverVersion: data.version
+			});
+			window.location.reload();
+		}
+	} catch (error) {
+		console.warn('Health check error:', error);
+	}
 }
 
 export function startAutoReload() {
-    if (checkInterval) {
-        console.warn('Auto-reload already started');
-        return;
-    }
+	if (checkInterval) {
+		console.warn('Auto-reload already started');
+		return;
+	}
 
-    checkInterval = setInterval(checkServerVersion, HEALTH_CHECK_INTERVAL);
+	checkInterval = setInterval(checkServerVersion, HEALTH_CHECK_INTERVAL);
 
-    console.log('Auto-reload monitoring started', {
-        clientVersion: CLIENT_VERSION, checkInterval: HEALTH_CHECK_INTERVAL
-    });
+	console.log('Auto-reload monitoring started', {
+		clientVersion: CLIENT_VERSION,
+		checkInterval: HEALTH_CHECK_INTERVAL
+	});
 }
 
 export function stopAutoReload() {
-    clearInterval(checkInterval);
-    console.log('Auto-reload monitoring stopped');
+	clearInterval(checkInterval);
+	console.log('Auto-reload monitoring stopped');
 }

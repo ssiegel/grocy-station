@@ -23,10 +23,10 @@ const AMOUNT_SCALE = 10 ** AMOUNT_DECIMAL_PLACES;
  * representation error. Never for a unit size or a quantity - see above.
  */
 export function quantizeAmount(amount: number): number {
-  if (!Number.isFinite(amount)) {
-    return amount;
-  }
-  return Math.round(amount * AMOUNT_SCALE) / AMOUNT_SCALE;
+	if (!Number.isFinite(amount)) {
+		return amount;
+	}
+	return Math.round(amount * AMOUNT_SCALE) / AMOUNT_SCALE;
 }
 
 /**
@@ -34,7 +34,7 @@ export function quantizeAmount(amount: number): number {
  * last kept place so that representation error alone does not fail it.
  */
 export function amountsEqual(a: number, b: number): boolean {
-  return Math.abs(a - b) < 0.5 / AMOUNT_SCALE;
+	return Math.abs(a - b) < 0.5 / AMOUNT_SCALE;
 }
 
 /**
@@ -42,9 +42,9 @@ export function amountsEqual(a: number, b: number): boolean {
  * representation error without rounding to a fixed number of places.
  */
 export function formatFactor(factor: number): string {
-  if (!Number.isFinite(factor)) {
-    return String(factor);
-  }
-  // 15 significant digits is the most a double is guaranteed to carry.
-  return String(Number(factor.toPrecision(15)));
+	if (!Number.isFinite(factor)) {
+		return String(factor);
+	}
+	// 15 significant digits is the most a double is guaranteed to carry.
+	return String(Number(factor.toPrecision(15)));
 }

@@ -10,130 +10,130 @@ quiet enough that a screenful of them does not shout.
 -->
 
 <script lang="ts">
-    import type { Snippet } from "svelte";
+	import type { Snippet } from 'svelte';
 
-    interface Props {
-        children: Snippet;
-        onclick: () => void;
-        /** Names the action, which is otherwise carried only by an icon. */
-        label: string;
-        disabled?: boolean;
-        hidden?: boolean;
-        /**
-         * Quieter, smaller variant for an action that corrects or annotates
-         * rather than advances: it should not read as a peer of the actions
-         * that commit something.
-         */
-        subtle?: boolean;
-        /**
-         * Sized to sit in a section header without setting its height.
-         * Keeps the full outline weight, unlike `subtle`.
-         */
-        compact?: boolean;
-        /** Destructive variant. Tints the label and icon. */
-        danger?: boolean;
-        /**
-         * Drops the button's own outline and corners, for use as one cell of
-         * a group that draws a single outline around the whole of itself.
-         */
-        cell?: boolean;
-    }
+	interface Props {
+		children: Snippet;
+		onclick: () => void;
+		/** Names the action, which is otherwise carried only by an icon. */
+		label: string;
+		disabled?: boolean;
+		hidden?: boolean;
+		/**
+		 * Quieter, smaller variant for an action that corrects or annotates
+		 * rather than advances: it should not read as a peer of the actions
+		 * that commit something.
+		 */
+		subtle?: boolean;
+		/**
+		 * Sized to sit in a section header without setting its height.
+		 * Keeps the full outline weight, unlike `subtle`.
+		 */
+		compact?: boolean;
+		/** Destructive variant. Tints the label and icon. */
+		danger?: boolean;
+		/**
+		 * Drops the button's own outline and corners, for use as one cell of
+		 * a group that draws a single outline around the whole of itself.
+		 */
+		cell?: boolean;
+	}
 
-    let {
-        children,
-        onclick,
-        label,
-        disabled = false,
-        hidden = false,
-        subtle = false,
-        compact = false,
-        danger = false,
-        cell = false,
-    }: Props = $props();
+	let {
+		children,
+		onclick,
+		label,
+		disabled = false,
+		hidden = false,
+		subtle = false,
+		compact = false,
+		danger = false,
+		cell = false
+	}: Props = $props();
 </script>
 
 <button
-    class:compact
-    class:subtle
-    class:danger
-    class:cell
-    {disabled}
-    {hidden}
-    {onclick}
-    aria-label={label}
+	class:compact
+	class:subtle
+	class:danger
+	class:cell
+	{disabled}
+	{hidden}
+	{onclick}
+	aria-label={label}
 >
-    {@render children()}
+	{@render children()}
 </button>
 
 <style>
-    button {
-        display: inline-flex;
-        gap: 0.5rem;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        padding: 0.75rem 1rem;
-        border: 2px solid var(--color-primary-dark);
-        border-radius: 0.25rem;
-        color: var(--color-primary-lighter);
-        background-color: transparent;
-    }
+	button {
+		display: inline-flex;
+		gap: 0.5rem;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		padding: 0.75rem 1rem;
+		border: 2px solid var(--color-primary-dark);
+		border-radius: 0.25rem;
+		color: var(--color-primary-lighter);
+		background-color: transparent;
+	}
 
-    button:disabled {
-        border-color: var(--color-shade-default);
-        color: var(--color-shade-high);
-    }
+	button:disabled {
+		border-color: var(--color-shade-default);
+		color: var(--color-shade-high);
+	}
 
-    button:focus {
-        background-color: var(--color-shade-default);
-    }
+	button:focus {
+		background-color: var(--color-shade-default);
+	}
 
-    button:active {
-        background-color: var(--color-shade-high);
-    }
+	button:active {
+		background-color: var(--color-shade-high);
+	}
 
-    /* Stretches to the row's height rather than sizing from its own label,
-     * so a row of these reads as one set regardless of what each says.
-     * Vertical padding is deliberately absent: it would fight the stretch. */
-    .compact {
-        height: auto;
-        align-self: stretch;
-        padding-block: 0;
-        padding-inline: 0.75rem;
-        font-size: var(--text-lg);
-        line-height: 1.1;
-    }
+	/* Stretches to the row's height rather than sizing from its own label,
+	 * so a row of these reads as one set regardless of what each says.
+	 * Vertical padding is deliberately absent: it would fight the stretch. */
+	.compact {
+		height: auto;
+		align-self: stretch;
+		padding-block: 0;
+		padding-inline: 0.75rem;
+		font-size: var(--text-lg);
+		line-height: 1.1;
+	}
 
-    .subtle {
-        height: auto;
-        align-self: stretch;
-        padding-block: 0;
-        padding-inline: 0.75rem;
-        border-width: 1px;
-        font-size: var(--text-sm);
-        line-height: 1.1;
-    }
+	.subtle {
+		height: auto;
+		align-self: stretch;
+		padding-block: 0;
+		padding-inline: 0.75rem;
+		border-width: 1px;
+		font-size: var(--text-sm);
+		line-height: 1.1;
+	}
 
-    .danger {
-        color: var(--color-red-400);
-    }
+	.danger {
+		color: var(--color-red-400);
+	}
 
-    .danger:disabled {
-        color: var(--color-shade-high);
-    }
+	.danger:disabled {
+		color: var(--color-shade-high);
+	}
 
-    /* The enclosing group owns the outline and the corners. The hairline
-     * dividing the cells is the group's business too, since only it knows
-     * which cells have a neighbour, so this must not out-specify it. */
-    .cell {
-        border: none;
-        border-radius: 0;
-    }
+	/* The enclosing group owns the outline and the corners. The hairline
+	 * dividing the cells is the group's business too, since only it knows
+	 * which cells have a neighbour, so this must not out-specify it. */
+	.cell {
+		border: none;
+		border-radius: 0;
+	}
 
-    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
-    @media (hover: hover) {
-        button:not(:disabled):hover {
-            background-color: var(--color-shade-default);
-        }
-    }
+	/* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
+	@media (hover: hover) {
+		button:not(:disabled):hover {
+			background-color: var(--color-shade-default);
+		}
+	}
 </style>

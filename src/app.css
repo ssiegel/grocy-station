@@ -9,80 +9,80 @@
  * respective .svelte file. */
 
 :root {
-  /* Type scale. Each size is paired with its line height; use both together,
-   * a size without its line height changes the vertical rhythm. */
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1.33333;
-  --text-sm: 0.9375rem;
-  --text-sm--line-height: 1.46667;
-  --text-lg: 1.125rem;
-  --text-lg--line-height: 1.4;
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.4;
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 1.33333;
+	/* Type scale. Each size is paired with its line height; use both together,
+	 * a size without its line height changes the vertical rhythm. */
+	--text-xs: 0.75rem;
+	--text-xs--line-height: 1.33333;
+	--text-sm: 0.9375rem;
+	--text-sm--line-height: 1.46667;
+	--text-lg: 1.125rem;
+	--text-lg--line-height: 1.4;
+	--text-xl: 1.25rem;
+	--text-xl--line-height: 1.4;
+	--text-2xl: 1.5rem;
+	--text-2xl--line-height: 1.33333;
 
-  /* Accent colors, taken from the Tailwind palette this project started with. */
-  --color-red-400: oklch(70.4% 0.191 22.216);
-  --color-red-500: oklch(63.7% 0.237 25.331);
-  --color-yellow-500: oklch(79.5% 0.184 86.047);
+	/* Accent colors, taken from the Tailwind palette this project started with. */
+	--color-red-400: oklch(70.4% 0.191 22.216);
+	--color-red-500: oklch(63.7% 0.237 25.331);
+	--color-yellow-500: oklch(79.5% 0.184 86.047);
 
-  /* Charcoal scale */
-  --color-charcoal-830: hsla(230, 7%, 17%, 1.00);
-  --color-charcoal-300: hsla(230, 7%, 70%, 1.00);
-  --color-charcoal-250-70: hsla(230, 7%, 75%, 0.70);
-  --color-charcoal-250-25: hsla(230, 7%, 75%, 0.25);
-  --color-charcoal-250-20: hsla(230, 7%, 75%, 0.20);
-  --color-charcoal-250-15: hsla(230, 7%, 75%, 0.15);
-  --color-charcoal-250-10: hsla(230, 7%, 75%, 0.10);
-  --color-charcoal-250: hsla(230, 7%, 75%, 1.00);
-  --color-charcoal-200: hsla(230, 7%, 80%, 1.00);
-  --color-charcoal-150: hsla(230, 7%, 85%, 1.00);
-  --color-charcoal-1000-20: hsla(230, 7%, 0%, 0.20);
+	/* Charcoal scale */
+	--color-charcoal-830: hsla(230, 7%, 17%, 1);
+	--color-charcoal-300: hsla(230, 7%, 70%, 1);
+	--color-charcoal-250-70: hsla(230, 7%, 75%, 0.7);
+	--color-charcoal-250-25: hsla(230, 7%, 75%, 0.25);
+	--color-charcoal-250-20: hsla(230, 7%, 75%, 0.2);
+	--color-charcoal-250-15: hsla(230, 7%, 75%, 0.15);
+	--color-charcoal-250-10: hsla(230, 7%, 75%, 0.1);
+	--color-charcoal-250: hsla(230, 7%, 75%, 1);
+	--color-charcoal-200: hsla(230, 7%, 80%, 1);
+	--color-charcoal-150: hsla(230, 7%, 85%, 1);
+	--color-charcoal-1000-20: hsla(230, 7%, 0%, 0.2);
 
-  /* Semantic roles */
-  --color-base: var(--color-charcoal-830);
-  --color-darken: var(--color-charcoal-1000-20);
-  --color-primary-dark: var(--color-charcoal-300);
-  --color-primary-default: var(--color-charcoal-250);
-  --color-primary-light: var(--color-charcoal-200);
-  --color-primary-lighter: var(--color-charcoal-150);
-  --color-shade-low: var(--color-charcoal-250-10);
-  --color-shade-default: var(--color-charcoal-250-15);
-  --color-shade-high: var(--color-charcoal-250-20);
-  --color-shade-higher: var(--color-charcoal-250-25);
-  --color-shade-highest: var(--color-charcoal-250-70);
-  --color-text: var(--color-charcoal-830);
+	/* Semantic roles */
+	--color-base: var(--color-charcoal-830);
+	--color-darken: var(--color-charcoal-1000-20);
+	--color-primary-dark: var(--color-charcoal-300);
+	--color-primary-default: var(--color-charcoal-250);
+	--color-primary-light: var(--color-charcoal-200);
+	--color-primary-lighter: var(--color-charcoal-150);
+	--color-shade-low: var(--color-charcoal-250-10);
+	--color-shade-default: var(--color-charcoal-250-15);
+	--color-shade-high: var(--color-charcoal-250-20);
+	--color-shade-higher: var(--color-charcoal-250-25);
+	--color-shade-highest: var(--color-charcoal-250-70);
+	--color-text: var(--color-charcoal-830);
 
-  --color-base-bg: var(--color-base);
+	--color-base-bg: var(--color-base);
 
-  --color-btn-bg-active: var(--color-primary-lighter);
-  --color-btn-bg-default: var(--color-primary-dark);
-  --color-btn-bg-focus: var(--color-primary-light);
-  --color-btn-bg-hover: var(--color-primary-default);
-  --color-btn-fg: var(--color-text);
+	--color-btn-bg-active: var(--color-primary-lighter);
+	--color-btn-bg-default: var(--color-primary-dark);
+	--color-btn-bg-focus: var(--color-primary-light);
+	--color-btn-bg-hover: var(--color-primary-default);
+	--color-btn-fg: var(--color-text);
 
-  --color-container-bg-default: var(--color-shade-low);
-  --color-container-fg: var(--color-primary-default);
+	--color-container-bg-default: var(--color-shade-low);
+	--color-container-fg: var(--color-primary-default);
 
-  --color-input-bg-active: var(--color-shade-higher);
-  --color-input-bg-default: var(--color-shade-low);
-  --color-input-bg-focus: var(--color-shade-high);
-  --color-input-bg-hover: var(--color-shade-default);
-  --color-input-fg: var(--color-primary-default);
+	--color-input-bg-active: var(--color-shade-higher);
+	--color-input-bg-default: var(--color-shade-low);
+	--color-input-bg-focus: var(--color-shade-high);
+	--color-input-bg-hover: var(--color-shade-default);
+	--color-input-fg: var(--color-primary-default);
 
-  --color-label-fg: var(--color-shade-highest);
+	--color-label-fg: var(--color-shade-highest);
 
-  /* Hairline between the cells of a segmented control. Lighter than a
-   * border: the cells sit inside one shared outline. */
-  --color-separator: hsla(230, 7%, 75%, 0.3);
-  /* Marker dot on a selected (light) cell. Dark, since it sits on the
-   * button palette rather than on the body. */
-  --color-marker-on-selected: hsla(230, 7%, 0%, 0.45);
-  /* Marker dot on an unselected cell, and its halo. Sage, to read as a
-   * standing annotation rather than as another selectable thing. */
-  --color-marker: hsla(103, 25%, 43%, 1);
-  --color-marker-glow: hsla(110, 24%, 42%, 0.25);
+	/* Hairline between the cells of a segmented control. Lighter than a
+	 * border: the cells sit inside one shared outline. */
+	--color-separator: hsla(230, 7%, 75%, 0.3);
+	/* Marker dot on a selected (light) cell. Dark, since it sits on the
+	 * button palette rather than on the body. */
+	--color-marker-on-selected: hsla(230, 7%, 0%, 0.45);
+	/* Marker dot on an unselected cell, and its halo. Sage, to read as a
+	 * standing annotation rather than as another selectable thing. */
+	--color-marker: hsla(103, 25%, 43%, 1);
+	--color-marker-glow: hsla(110, 24%, 42%, 0.25);
 }
 
 /* Reset, deliberately scoped to the elements this app actually renders
@@ -93,45 +93,60 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  border: 0 solid;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	border: 0 solid;
 }
 
 button,
 input {
-  /* Without this, form controls drop out of the font and size cascade. */
-  font: inherit;
-  color: inherit;
-  background-color: transparent;
-  border-radius: 0;
+	/* Without this, form controls drop out of the font and size cascade. */
+	font: inherit;
+	color: inherit;
+	background-color: transparent;
+	border-radius: 0;
 }
 
 button {
-  appearance: button;
+	appearance: button;
 }
 
 svg {
-  /* Icons sit inside flex buttons and are sized via height. */
-  display: block;
-  vertical-align: middle;
+	/* Icons sit inside flex buttons and are sized via height. */
+	display: block;
+	vertical-align: middle;
 }
 
-[hidden]:where(:not([hidden="until-found"])) {
-  /* The UA rule for this loses to any explicit display declaration. */
-  display: none !important;
+[hidden]:where(:not([hidden='until-found'])) {
+	/* The UA rule for this loses to any explicit display declaration. */
+	display: none !important;
 }
 
 html {
-  /* Spelled out rather than referenced via a custom property: font-magician
-   * scans declared font families and would not see it through var(). */
-  font-family: "Tanohe Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  line-height: 1.5;
-  background-color: var(--color-base-bg);
-  user-select: none;
-  /* Kiosk tablet: suppress the tap flash on every touch. */
-  -webkit-tap-highlight-color: transparent;
+	/* Spelled out rather than referenced via a custom property: font-magician
+	 * scans declared font families and would not see it through var(). */
+	font-family:
+		'Tanohe Sans',
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		Roboto,
+		'Helvetica Neue',
+		Arial,
+		'Noto Sans',
+		sans-serif,
+		'Apple Color Emoji',
+		'Segoe UI Emoji',
+		'Segoe UI Symbol',
+		'Noto Color Emoji';
+	line-height: 1.5;
+	background-color: var(--color-base-bg);
+	user-select: none;
+	/* Kiosk tablet: suppress the tap flash on every touch. */
+	-webkit-tap-highlight-color: transparent;
 }
 
 /* Data tables - the stock, shopping list and journal sections.
@@ -146,49 +161,49 @@ html {
  * reads the product and the composed amount from further away than the rows.
  */
 .data-grid {
-  display: grid;
-  column-gap: 0.5rem;
-  font-size: var(--text-lg);
-  line-height: var(--text-lg--line-height);
-  color: var(--color-label-fg);
+	display: grid;
+	column-gap: 0.5rem;
+	font-size: var(--text-lg);
+	line-height: var(--text-lg--line-height);
+	color: var(--color-label-fg);
 }
 
 /* Aligns a cell against the column rule the header sets. */
 .data-grid .indent {
-  padding-left: 0.5rem;
+	padding-left: 0.5rem;
 }
 
 .data-grid .align-start {
-  justify-self: start;
+	justify-self: start;
 }
 
 .data-grid .align-center {
-  justify-self: center;
+	justify-self: center;
 }
 
 .data-grid .align-end {
-  justify-self: end;
+	justify-self: end;
 }
 
 .data-grid .nowrap {
-  white-space: nowrap;
+	white-space: nowrap;
 }
 
 /* A row's own annotation, under the row it belongs to. */
 .data-grid .note {
-  padding-inline: 1rem;
-  font-style: italic;
+	padding-inline: 1rem;
+	font-style: italic;
 }
 
 /* Zebra striping, drawn as a backdrop spanning the full row rather than as
  * a background on each cell, so the column gaps are striped too. */
 .data-grid .stripe {
-  background-color: var(--color-shade-low);
-  opacity: 0.2;
+	background-color: var(--color-shade-low);
+	opacity: 0.2;
 }
 
 .data-grid .stripe.odd {
-  background-color: var(--color-darken);
+	background-color: var(--color-darken);
 }
 
 /* Press target overlaying a whole row. It must stay above the striping and
@@ -200,30 +215,30 @@ html {
  * is the only one that knows what the state means; it stays hidden until a
  * state class turns it on. */
 .data-grid .target {
-  position: relative;
-  border-left: 4px none currentColor;
+	position: relative;
+	border-left: 4px none currentColor;
 }
 
 .data-grid .target.marked {
-  border-left-style: solid;
+	border-left-style: solid;
 }
 
 .data-grid .target.marked-partial {
-  border-left-style: dotted;
+	border-left-style: dotted;
 }
 
 /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
 @media (hover: hover) {
-  .data-grid .target:hover {
-    background-color: var(--color-shade-default);
-  }
+	.data-grid .target:hover {
+		background-color: var(--color-shade-default);
+	}
 }
 
 /* Stands in for a table with nothing in it. Matches the rows it replaces,
  * so that a section does not shout loudest when it has least to say. */
 .section-empty {
-  padding: 0.25rem 0.5rem;
-  font-size: var(--text-lg);
-  line-height: var(--text-lg--line-height);
-  font-style: italic;
+	padding: 0.25rem 0.5rem;
+	font-size: var(--text-lg);
+	line-height: var(--text-lg--line-height);
+	font-style: italic;
 }

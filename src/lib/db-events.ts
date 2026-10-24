@@ -15,7 +15,7 @@
  * during a restart.
  */
 
-import { ProductState, type Page } from "$lib/state.svelte";
+import { ProductState, type Page } from '$lib/state.svelte';
 
 const RECONNECT_MS = 5_000;
 
@@ -24,47 +24,47 @@ let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let page: Page | undefined;
 
 function attach(es: EventSource) {
-  es.onmessage = (event) => {
-    const { changed_time } = JSON.parse(event.data) as { changed_time: string };
-    if (page?.state instanceof ProductState) {
-      void page.state.onDbChanged(changed_time);
-    }
-  };
+	es.onmessage = (event) => {
+		const { changed_time } = JSON.parse(event.data) as { changed_time: string };
+		if (page?.state instanceof ProductState) {
+			void page.state.onDbChanged(changed_time);
+		}
+	};
 
-  es.onerror = () => {
-    if (es.readyState === EventSource.CLOSED) {
-      // Permanent failure — native auto-reconnect won't kick in.
-      // Retry manually after a delay.
-      console.warn("db-events: SSE closed permanently, retrying in 5s…");
-      es.close();
-      if (reconnectTimer === undefined) {
-        reconnectTimer = setTimeout(() => {
-          reconnectTimer = undefined;
-          connect();
-        }, RECONNECT_MS);
-      }
-    }
-    // readyState === CONNECTING means native auto-reconnect is active.
-  };
+	es.onerror = () => {
+		if (es.readyState === EventSource.CLOSED) {
+			// Permanent failure — native auto-reconnect won't kick in.
+			// Retry manually after a delay.
+			console.warn('db-events: SSE closed permanently, retrying in 5s…');
+			es.close();
+			if (reconnectTimer === undefined) {
+				reconnectTimer = setTimeout(() => {
+					reconnectTimer = undefined;
+					connect();
+				}, RECONNECT_MS);
+			}
+		}
+		// readyState === CONNECTING means native auto-reconnect is active.
+	};
 }
 
 function connect() {
-  // Close any previous connection first, otherwise a double-scheduled
-  // reconnect leaves an orphaned EventSource delivering duplicate events.
-  eventSource?.close();
-  eventSource = new EventSource("/api/db-events");
-  attach(eventSource);
+	// Close any previous connection first, otherwise a double-scheduled
+	// reconnect leaves an orphaned EventSource delivering duplicate events.
+	eventSource?.close();
+	eventSource = new EventSource('/api/db-events');
+	attach(eventSource);
 }
 
 export function setupDbEvents(p: Page) {
-  page = p;
-  connect();
+	page = p;
+	connect();
 }
 
 export function disconnectDbEvents() {
-  clearTimeout(reconnectTimer);
-  reconnectTimer = undefined;
-  eventSource?.close();
-  eventSource = undefined;
-  page = undefined;
+	clearTimeout(reconnectTimer);
+	reconnectTimer = undefined;
+	eventSource?.close();
+	eventSource = undefined;
+	page = undefined;
 }

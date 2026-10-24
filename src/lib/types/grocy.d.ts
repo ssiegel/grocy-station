@@ -3,78 +3,74 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { components } from "$lib/types/grocy-api";
+import type { components } from '$lib/types/grocy-api';
 
 // type GrocyObject = paths['/objects/{entity}/{objectId}']['get']['responses'][200]['content']['application/json'];
 // type GrocyObject = Record<string, unknown>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GrocyObject = Record<string, any>;
-type GrocyProduct = components["schemas"]["Product"] & {
-  qu_id_stock: number;
-  qu_id_purchase: number;
-  qu_id_consume: number;
-  qu_id_price: number;
-  quick_open_amount: number;
-  quick_consume_amount: number;
-  due_type: 1 | 2;
+type GrocyProduct = components['schemas']['Product'] & {
+	qu_id_stock: number;
+	qu_id_purchase: number;
+	qu_id_consume: number;
+	qu_id_price: number;
+	quick_open_amount: number;
+	quick_consume_amount: number;
+	due_type: 1 | 2;
 };
-type GrocyUnit = components["schemas"]["QuantityUnit"];
-export type GrocyProductDetails =
-  & components["schemas"]["ProductDetailsResponse"]
-  & {
-    product: GrocyProduct;
-    product_barcodes: GrocyBarcode[];
-    quantity_unit_stock: GrocyUnit;
-    default_quantity_unit_purchase: GrocyUnit;
-    default_quantity_unit_consume: GrocyUnit;
-    quantity_unit_price: GrocyUnit;
-  };
-export type GrocyStockEntry = components["schemas"]["StockEntry"] & {
-  /** In GrocyProduct.qu_id_stock units. */
-  amount: number;
-  amount_allotted: number;
+type GrocyUnit = components['schemas']['QuantityUnit'];
+export type GrocyProductDetails = components['schemas']['ProductDetailsResponse'] & {
+	product: GrocyProduct;
+	product_barcodes: GrocyBarcode[];
+	quantity_unit_stock: GrocyUnit;
+	default_quantity_unit_purchase: GrocyUnit;
+	default_quantity_unit_consume: GrocyUnit;
+	quantity_unit_price: GrocyUnit;
+};
+export type GrocyStockEntry = components['schemas']['StockEntry'] & {
+	/** In GrocyProduct.qu_id_stock units. */
+	amount: number;
+	amount_allotted: number;
 };
 
-export type GrocyStockLogEntry = components["schemas"]["StockLogEntry"] & {
-  amount: number;
-  product_id: number;
+export type GrocyStockLogEntry = components['schemas']['StockLogEntry'] & {
+	amount: number;
+	product_id: number;
 };
 type GrocyQUConversion = {
-  id: number;
-  from_qu_id: number;
-  to_qu_id: number;
-  factor: number;
-  //product_id?: number;
+	id: number;
+	from_qu_id: number;
+	to_qu_id: number;
+	factor: number;
+	//product_id?: number;
 };
-export type GrocyBarcode = components["schemas"]["ProductBarcode"] & {
-  id: number;
-  product_id: number;
-  barcode: string;
-  userfields?: Record<string, string>;
+export type GrocyBarcode = components['schemas']['ProductBarcode'] & {
+	id: number;
+	product_id: number;
+	barcode: string;
+	userfields?: Record<string, string>;
 };
 
-export type GrocyShoppingListItem =
-  & components["schemas"]["ShoppingListItem"]
-  & {
-    id: number;
-    shopping_list_id: number;
-    product_id: number;
-    done: number;
-  };
+export type GrocyShoppingListItem = components['schemas']['ShoppingListItem'] & {
+	id: number;
+	shopping_list_id: number;
+	product_id: number;
+	done: number;
+};
 export type GrocyProductGroup = {
-  id: number;
-  name: string;
+	id: number;
+	name: string;
 };
 
 export type GrocyShoppingList = {
-  id: number;
-  name: string;
+	id: number;
+	name: string;
 };
 
 /** A shopping list item, paired with the list it sits on. */
 export type GrocyShoppingListItemEntry = {
-  list: GrocyShoppingList;
-  item: GrocyShoppingListItem;
+	list: GrocyShoppingList;
+	item: GrocyShoppingListItem;
 };
 
 /** Product purchasing or consumption packaging units.
@@ -84,38 +80,36 @@ export type GrocyShoppingListItemEntry = {
  * *Box* is the purchase pu and *Bag* is the consumption pu.
  */
 export type GrocyPackagingUnit = {
-  name: string;
-  /** In GrocyProduct.qu_id_stock units. */
-  amount: number;
-  /** Packaging unit amount formated for display */
-  amount_display: string;
+	name: string;
+	/** In GrocyProduct.qu_id_stock units. */
+	amount: number;
+	/** Packaging unit amount formated for display */
+	amount_display: string;
 };
 
 /** A product's packaging units together with the ones to mark. */
 export type GrocyPackagingUnits = {
-  /** In increasing order of PackagingUnit.amount. */
-  units: GrocyPackagingUnit[];
-  /**
-   * Index into `units` of the barcode's own amount, i.e. the one the LED
-   * marks as "scanned".
-   */
-  baseIndex: number;
-  /**
-   * Index into `units` of the unit listed first in Grocy, i.e. the one to
-   * preselect.
-   */
-  firstIndex: number;
+	/** In increasing order of PackagingUnit.amount. */
+	units: GrocyPackagingUnit[];
+	/**
+	 * Index into `units` of the barcode's own amount, i.e. the one the LED
+	 * marks as "scanned".
+	 */
+	baseIndex: number;
+	/**
+	 * Index into `units` of the unit listed first in Grocy, i.e. the one to
+	 * preselect.
+	 */
+	firstIndex: number;
 };
 export type GrocyData = {
-  barcode: GrocyBarcode;
-  packaging_units: GrocyPackagingUnits;
-  product_details: GrocyProductDetails;
-  product_group: GrocyProductGroup;
-  stock: GrocyStockEntry[];
-  stock_log: GrocyStockLogEntry[];
-  shopping_list_items: GrocyShoppingListItem[];
+	barcode: GrocyBarcode;
+	packaging_units: GrocyPackagingUnits;
+	product_details: GrocyProductDetails;
+	product_group: GrocyProductGroup;
+	stock: GrocyStockEntry[];
+	stock_log: GrocyStockLogEntry[];
+	shopping_list_items: GrocyShoppingListItem[];
 };
 
-type GrocyErrorReply =
-  | components["schemas"]["Error400"]
-  | components["schemas"]["Error500"];
+type GrocyErrorReply = components['schemas']['Error400'] | components['schemas']['Error500'];

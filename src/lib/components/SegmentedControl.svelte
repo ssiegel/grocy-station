@@ -10,121 +10,121 @@ caller's values need not be distinct.
 -->
 
 <script lang="ts">
-    interface Props {
-        /** Cell labels. The second line, where given, is rendered smaller. */
-        options: { label: string; sublabel?: string }[];
-        /** Index of the selected option, or -1 when the value is not one of them. */
-        selectedIndex: number;
-        /** Index of the option marked as the default, if any. */
-        defaultIndex?: number;
-        onselect: (index: number) => void;
-    }
+	interface Props {
+		/** Cell labels. The second line, where given, is rendered smaller. */
+		options: { label: string; sublabel?: string }[];
+		/** Index of the selected option, or -1 when the value is not one of them. */
+		selectedIndex: number;
+		/** Index of the option marked as the default, if any. */
+		defaultIndex?: number;
+		onselect: (index: number) => void;
+	}
 
-    let { options, selectedIndex, defaultIndex, onselect }: Props = $props();
+	let { options, selectedIndex, defaultIndex, onselect }: Props = $props();
 </script>
 
 <div class="group" role="radiogroup">
-    {#each options as option, i (i)}
-        <button
-            class="cell"
-            class:selected={i === selectedIndex}
-            role="radio"
-            aria-checked={i === selectedIndex}
-            onclick={() => onselect(i)}
-        >
-            {option.label}
-            {#if option.sublabel !== undefined}
-                <br />
-                <span class="sublabel">{option.sublabel}</span>
-            {/if}
-            {#if i === defaultIndex}
-                <span class="marker" aria-label="default"></span>
-            {/if}
-        </button>
-    {/each}
+	{#each options as option, i (i)}
+		<button
+			class="cell"
+			class:selected={i === selectedIndex}
+			role="radio"
+			aria-checked={i === selectedIndex}
+			onclick={() => onselect(i)}
+		>
+			{option.label}
+			{#if option.sublabel !== undefined}
+				<br />
+				<span class="sublabel">{option.sublabel}</span>
+			{/if}
+			{#if i === defaultIndex}
+				<span class="marker" aria-label="default"></span>
+			{/if}
+		</button>
+	{/each}
 </div>
 
 <style>
-    .group {
-        display: inline-flex;
-        flex-direction: row;
-        align-self: flex-start;
-        overflow: hidden;
-        border: 2px solid var(--color-primary-default);
-        border-radius: 0.25rem;
-    }
+	.group {
+		display: inline-flex;
+		flex-direction: row;
+		align-self: flex-start;
+		overflow: hidden;
+		border: 2px solid var(--color-primary-default);
+		border-radius: 0.25rem;
+	}
 
-    .cell {
-        position: relative;
-        padding: 0.25rem 1rem;
-        color: var(--color-primary-lighter);
-        text-align: center;
-        background-color: transparent;
-        /* Without this the cell background would paint over the shared
-         * outline of the group. */
-        background-clip: padding-box;
-    }
+	.cell {
+		position: relative;
+		padding: 0.25rem 1rem;
+		color: var(--color-primary-lighter);
+		text-align: center;
+		background-color: transparent;
+		/* Without this the cell background would paint over the shared
+		 * outline of the group. */
+		background-clip: padding-box;
+	}
 
-    /* Cells share one outline, so they are divided by a hairline instead. */
-    .cell + .cell {
-        border-left: 1px solid var(--color-separator);
-    }
+	/* Cells share one outline, so they are divided by a hairline instead. */
+	.cell + .cell {
+		border-left: 1px solid var(--color-separator);
+	}
 
-    .cell.selected {
-        color: var(--color-btn-fg);
-        background-color: var(--color-btn-bg-default);
-    }
+	.cell.selected {
+		color: var(--color-btn-fg);
+		background-color: var(--color-btn-bg-default);
+	}
 
-    .cell:focus {
-        background-color: var(--color-shade-default);
-    }
+	.cell:focus {
+		background-color: var(--color-shade-default);
+	}
 
-    .cell.selected:focus {
-        background-color: var(--color-btn-bg-focus);
-    }
+	.cell.selected:focus {
+		background-color: var(--color-btn-bg-focus);
+	}
 
-    .cell:active {
-        background-color: var(--color-shade-high);
-    }
+	.cell:active {
+		background-color: var(--color-shade-high);
+	}
 
-    .cell.selected:active {
-        background-color: var(--color-btn-bg-active);
-    }
+	.cell.selected:active {
+		background-color: var(--color-btn-bg-active);
+	}
 
-    .sublabel {
-        font-size: var(--text-xl);
-        line-height: var(--text-xl--line-height);
-    }
+	.sublabel {
+		font-size: var(--text-xl);
+		line-height: var(--text-xl--line-height);
+	}
 
-    /* Always on the default cell, so the way back to it stays findable.
-     * Lit while the selection is elsewhere; dark and unhaloed once the
-     * default is itself selected, where it has nothing left to point out
-     * but still marks which cell is the default one. */
-    .marker {
-        position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
-        width: 0.375rem;
-        height: 0.375rem;
-        border-radius: 50%;
-        background-color: var(--color-marker);
-        box-shadow: 0 0 0 2px var(--color-marker-glow);
-        pointer-events: none;
-    }
+	/* Always on the default cell, so the way back to it stays findable.
+	 * Lit while the selection is elsewhere; dark and unhaloed once the
+	 * default is itself selected, where it has nothing left to point out
+	 * but still marks which cell is the default one. */
+	.marker {
+		position: absolute;
+		top: 0.25rem;
+		right: 0.25rem;
+		width: 0.375rem;
+		height: 0.375rem;
+		border-radius: 50%;
+		background-color: var(--color-marker);
+		box-shadow: 0 0 0 2px var(--color-marker-glow);
+		pointer-events: none;
+	}
 
-    .cell.selected .marker {
-        background-color: var(--color-marker-on-selected);
-        box-shadow: none;
-    }
+	.cell.selected .marker {
+		background-color: var(--color-marker-on-selected);
+		box-shadow: none;
+	}
 
-    /* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
-    @media (hover: hover) {
-        .cell:hover {
-            background-color: var(--color-shade-default);
-        }
+	/* Guarded so a tap on the kiosk tablet does not leave a stuck highlight. */
+	@media (hover: hover) {
+		.cell:hover {
+			background-color: var(--color-shade-default);
+		}
 
-        .cell.selected:hover {
-            background-color: var(--color-btn-bg-hover);
-        }
-    }
+		.cell.selected:hover {
+			background-color: var(--color-btn-bg-hover);
+		}
+	}
 </style>
