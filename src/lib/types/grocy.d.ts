@@ -7,6 +7,7 @@ import type { components } from "$lib/types/grocy-api";
 
 // type GrocyObject = paths['/objects/{entity}/{objectId}']['get']['responses'][200]['content']['application/json'];
 // type GrocyObject = Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GrocyObject = Record<string, any>;
 type GrocyProduct = components["schemas"]["Product"] & {
   qu_id_stock: number;

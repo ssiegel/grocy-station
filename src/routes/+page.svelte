@@ -16,6 +16,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     import Clock from "$lib/components/Clock.svelte";
     import { startAutoReload, stopAutoReload } from "$lib/auto-reload";
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).reEnableScreen = () => {
         screenOn(3000);
     };
