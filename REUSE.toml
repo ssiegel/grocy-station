@@ -7,9 +7,9 @@ version = 1
 [[annotations]]
 path = [
     "deno.lock",
-    "src/lib/types/grocy.d.ts"
+    "src/lib/types/grocy-api.d.ts"
 ]
-SPDX-FileCopyrightText = "© 2025 Stefan Siegel <ssiegel@sdas.net>"
+SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"
 
 [[annotations]]

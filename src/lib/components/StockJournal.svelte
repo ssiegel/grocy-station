@@ -82,13 +82,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             >
             {entry.transaction_type}
             </div>
-            <div 
+            <div
                 style="grid-area: {i * 2 + 2} / 2"
                 class="align-center nowrap"
             >
                 {formatNumber(entry.amount, productData.product_details.quantity_unit_stock.id)}
             </div>
-            <div 
+            <div
                 style="grid-area: {i * 2 + 2} / 3"
             >
                 {formatDate(entry.row_created_timestamp)}
