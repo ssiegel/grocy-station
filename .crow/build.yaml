@@ -19,9 +19,8 @@ variables:
   # STORAGE_OPTS to empty discards the default mount_program=fuse-overlayfs
   - &buildah_env
     BUILDAH_ISOLATION: chroot
-    STORAGE_DRIVER: vfs
-    # STORAGE_DRIVER: overlay
-    # STORAGE_OPTS: ''
+    STORAGE_DRIVER: overlay
+    STORAGE_OPTS: ''
   - &buildah_security_context
     seccompProfile:
       type: Unconfined
@@ -57,7 +56,7 @@ steps:
         printf '%s' "$${REGISTRY_TOKEN}" |
           buildah login --username stefan --password-stdin harbor.homelab.sdas.net
       - |
-        buildah --root /crow/storage build \
+        buildah build \
           --platform linux/${arch} \
           --layers \
           --cache-to harbor.homelab.sdas.net/library/grocy-station-cache \
@@ -69,5 +68,5 @@ steps:
           -t staged \
           .
       - |
-        buildah --root /crow/storage push staged \
+        buildah push staged \
           "docker://harbor.homelab.sdas.net/library/grocy-station-cache:stage-$${CI_COMMIT_SHA}-${arch}"
