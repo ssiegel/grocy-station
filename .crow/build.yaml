@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: © 2025 Stefan Siegel <ssiegel@sdas.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+when:
+  - event: [push, tag]
+
+# One workflow instance per architecture, don't emulate.
+matrix:
+  arch:
+    - amd64
+    - arm64
+
+labels:
+  platform: linux/${arch}
+
+variables:
+  # Native overlay needs no /dev/fuse and no privileges. Setting
+  # STORAGE_OPTS to empty discards the default mount_program=fuse-overlayfs
+  - &buildah_env
+    BUILDAH_ISOLATION: chroot
+    STORAGE_DRIVER: vfs
+    # STORAGE_DRIVER: overlay
+    # STORAGE_OPTS: ''
+  - &buildah_security_context
+    seccompProfile:
+      type: Unconfined
+    apparmorProfile:
+      type: Unconfined
+    capabilities:
+      add:
+        - SETUID
+        - SETGID
+        - SETFCAP
+        # Not needed while the two profiles above are Unconfined. Uncomment if
+        # a build fails with "operation not permitted".
+        # - CHOWN
+        # - DAC_OVERRIDE
+        # - FOWNER
+        # - FSETID
+        # - SYS_CHROOT
+
+# Not gated on the tests, since this only writes throwaway staging tags.
+# Publishing is gated in the manifest workflow.
+steps:
+  - name: build and stage
+    image: quay.io/buildah/stable:v1.43.5
+    environment:
+      <<: *buildah_env
+      REGISTRY_TOKEN:
+        from_secret: registry_token
+    backend_options:
+      kubernetes:
+        securityContext: *buildah_security_context
+    commands:
+      - |
+        printf '%s' "$${REGISTRY_TOKEN}" |
+          buildah login --username stefan --password-stdin harbor.homelab.sdas.net
+      - |
+        buildah --root /crow/storage build \
+          --platform linux/${arch} \
+          --layers \
+          --cache-to harbor.homelab.sdas.net/library/grocy-station-cache \
+          --cache-from harbor.homelab.sdas.net/library/grocy-station-cache \
+          --build-arg GIT_HEAD=$${CI_COMMIT_SHA} \
+          --label org.opencontainers.image.source="$${CI_REPO_URL}" \
+          --label org.opencontainers.image.revision="$${CI_COMMIT_SHA}" \
+          -f Dockerfile \
+          -t staged \
+          .
+      - |
+        buildah --root /crow/storage push staged \
+          "docker://harbor.homelab.sdas.net/library/grocy-station-cache:stage-$${CI_COMMIT_SHA}-${arch}"

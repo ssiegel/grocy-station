@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-FROM denoland/deno:debian-2.9.7 as sources
+FROM docker.io/denoland/deno:debian-2.9.7 as sources
 WORKDIR /work
 
 COPY package.json deno.lock ./
@@ -29,7 +29,7 @@ RUN deno task format:check . \
 FROM sources AS builder
 RUN deno task build && cd build && deno install
 
-FROM denoland/deno:distroless-2.9.7
+FROM docker.io/denoland/deno:distroless-2.9.7
 WORKDIR /app
 COPY --from=builder /work/build .
 

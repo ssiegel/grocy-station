@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: © 2025 Stefan Siegel <ssiegel@sdas.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+when:
+  - event: [push, tag]
+
+depends_on:
+  - test
+  - build
+
+steps:
+  - name: push manifest
+    image: quay.io/buildah/stable:v1.43.5
+    environment:
+      REGISTRY_TOKEN:
+        from_secret: registry_token
+    commands:
+      - |
+        printf '%s' "$${REGISTRY_TOKEN}" |
+          buildah login --username stefan --password-stdin harbor.homelab.sdas.net
+      # tags added:
+      # - the short commit SHA
+      # - the branch or tag ref
+      # - "latest" on the default branch
+      - |
+        image=harbor.homelab.sdas.net/library/grocy-station
+        cache=harbor.homelab.sdas.net/library/grocy-station-cache
+
+        tags="sha-$(printf '%s' "$${CI_COMMIT_SHA}" | cut -c1-7)"
+        if [ -n "$${CI_COMMIT_TAG}" ]; then
+          tags="$${tags} $(printf '%s' "$${CI_COMMIT_TAG}" | tr '/' '-')"
+        elif [ -n "$${CI_COMMIT_BRANCH}" ]; then
+          tags="$${tags} $(printf '%s' "$${CI_COMMIT_BRANCH}" | tr '/' '-')"
+        fi
+        if [ "$${CI_COMMIT_BRANCH}" = "$${CI_REPO_DEFAULT_BRANCH}" ]; then
+          tags="$${tags} latest"
+        fi
+
+        buildah manifest create release
+        for arch in amd64 arm64; do
+          buildah manifest add release "docker://$${cache}:stage-$${CI_COMMIT_SHA}-$${arch}"
+        done
+
+        for tag in $${tags}; do
+          echo "pushing $${image}:$${tag}"
+          buildah manifest push --all release "docker://$${image}:$${tag}"
+        done
