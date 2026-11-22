@@ -15,6 +15,9 @@ labels:
 variables:
   image: harbor.homelab.sdas.net/library/grocy-station
   registry_user: stefan
+  registry_env: &registry_env
+    REGISTRY_TOKEN:
+      from_secret: registry_token
 
   # Native overlay needs no /dev/fuse and no privileges. Setting
   # STORAGE_OPTS to empty discards the default mount_program=fuse-overlayfs
@@ -43,9 +46,7 @@ variables:
 steps:
   - name: push manifest
     image: quay.io/buildah/stable:v1.43.5
-    environment:
-      REGISTRY_TOKEN:
-        from_secret: registry_token
+    environment: *registry_env
     backend_options:
       kubernetes:
         securityContext: *buildah_security_context
